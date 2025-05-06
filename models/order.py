@@ -7,11 +7,7 @@ class Order(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    item_id = db.Column(db.Integer, db.ForeignKey('inventory_items.id'), nullable=False)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=False)
-    quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Float, nullable=False)
-    total_price = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), nullable=False, default='대기중')  # 대기중, 발주완료, 입고완료
     order_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     delivery_date = db.Column(db.DateTime)
@@ -21,14 +17,12 @@ class Order(db.Model):
 
     # 관계 설정
     user = db.relationship('User', back_populates='orders')
-    item = db.relationship('InventoryItem', back_populates='orders')
     supplier = db.relationship('Supplier', back_populates='orders')
     items = db.relationship('OrderItem', back_populates='order', cascade='all, delete-orphan')
     
     def calculate_total(self):
         """총 가격을 계산합니다."""
-        self.total_price = self.quantity * self.unit_price
-        return self.total_price
+        return sum(item.total_price for item in self.items)
     
     def update_status(self, new_status):
         """주문 상태를 업데이트합니다."""

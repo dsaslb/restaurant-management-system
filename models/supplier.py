@@ -8,6 +8,8 @@ class Supplier(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     contact = db.Column(db.String(200))            # 이메일/전화번호/웹사이트 등
+    email = db.Column(db.String(200))              # 이메일 주소
+    address = db.Column(db.String(200))            # 주소
     order_method = db.Column(db.String(50))        # 'email', 'sms', 'web'
     default_lead_days = db.Column(db.Integer)      # D-1, D-2용 기본값
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -16,6 +18,7 @@ class Supplier(db.Model):
 
     # 관계 설정
     orders = db.relationship('Order', back_populates='supplier')
+    inventory_items = db.relationship('InventoryItem', back_populates='supplier')
     
     def get_active_orders(self):
         """활성화된 발주 목록을 반환합니다."""

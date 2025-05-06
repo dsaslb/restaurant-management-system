@@ -36,15 +36,17 @@ class InventoryItem(db.Model):
     origin = db.Column(db.String(100))             # 원산지
     expiration_date = db.Column(db.Date)           # 유통기한
     storage_info = db.Column(db.String(200))       # 보관 방법
+    supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))  # 공급업체 ID
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
 
     # 관계 설정
-    orders = db.relationship('Order', back_populates='item')
+    order_items = db.relationship('OrderItem', back_populates='item')
     batches = db.relationship('InventoryBatch', back_populates='item', cascade='all, delete-orphan')
     ingredients = db.relationship('Ingredient', back_populates='item')
     stock_items = db.relationship('StockItem', back_populates='item')
+    supplier = db.relationship('Supplier', back_populates='inventory_items')
     
     def check_stock_level(self):
         """재고 수준을 확인하고 부족 여부를 반환합니다."""

@@ -12,7 +12,7 @@ from typing import Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_migrate import Migrate
 from flask_login import LoginManager, current_user
-from models import User, Employee
+from models import User, Employee, Supplier, Order, OrderItem, InventoryItem
 from routes.auth import auth_bp, create_admin_user
 from routes.employee import employee_bp
 from routes.inventory import inventory_bp
@@ -103,6 +103,255 @@ def create_admin():
         logger.error(f"관리자 계정 생성 중 오류 발생: {str(e)}")
         raise
 
+def create_sample_data():
+    """예시 데이터 생성"""
+    # 관리자 계정 생성
+    admin = User.query.filter_by(username='admin01').first()
+    if not admin:
+        admin = User(
+            username='admin01',
+            email='admin@example.com',
+            role='admin'
+        )
+        admin.set_password('1234')
+        db.session.add(admin)
+        db.session.commit()
+    
+    # 직원 계정 생성
+    employees = [
+        {
+            'username': 'emp01',
+            'email': 'emp01@example.com',
+            'name': '김철수',
+            'position': '주방장',
+            'phone': '010-1234-5678',
+            'hire_date': datetime.now() - timedelta(days=365)
+        },
+        {
+            'username': 'emp02',
+            'email': 'emp02@example.com',
+            'name': '이영희',
+            'position': '서빙',
+            'phone': '010-2345-6789',
+            'hire_date': datetime.now() - timedelta(days=180)
+        },
+        {
+            'username': 'emp03',
+            'email': 'emp03@example.com',
+            'name': '박지민',
+            'position': '주방보조',
+            'phone': '010-3456-7890',
+            'hire_date': datetime.now() - timedelta(days=90)
+        },
+        {
+            'username': 'emp04',
+            'email': 'emp04@example.com',
+            'name': '최수진',
+            'position': '매니저',
+            'phone': '010-4567-8901',
+            'hire_date': datetime.now() - timedelta(days=60)
+        },
+        {
+            'username': 'emp05',
+            'email': 'emp05@example.com',
+            'name': '정민호',
+            'position': '주방보조',
+            'phone': '010-5678-9012',
+            'hire_date': datetime.now() - timedelta(days=30)
+        }
+    ]
+    
+    for emp_data in employees:
+        user = User.query.filter_by(username=emp_data['username']).first()
+        if not user:
+            user = User(
+                username=emp_data['username'],
+                email=emp_data['email'],
+                role='user'
+            )
+            user.set_password('1234')
+            db.session.add(user)
+            db.session.flush()
+            
+            employee = Employee(
+                user_id=user.id,
+                name=emp_data['name'],
+                position=emp_data['position'],
+                phone=emp_data['phone'],
+                hire_date=emp_data['hire_date']
+            )
+            db.session.add(employee)
+    
+    # 공급업체 생성
+    suppliers = [
+        {
+            'name': '신선식품',
+            'contact': '02-123-4567',
+            'order_method': 'email',
+            'email': 'fresh@example.com',
+            'address': '서울시 강남구 신선로 123'
+        },
+        {
+            'name': '건어물상사',
+            'contact': '02-234-5678',
+            'order_method': 'web',
+            'email': 'seafood@example.com',
+            'address': '서울시 서초구 건어물로 456'
+        },
+        {
+            'name': '청과물도매',
+            'contact': '02-345-6789',
+            'order_method': 'sms',
+            'email': 'fruit@example.com',
+            'address': '서울시 송파구 청과로 789'
+        },
+        {
+            'name': '육류도매',
+            'contact': '02-456-7890',
+            'order_method': 'phone',
+            'email': 'meat@example.com',
+            'address': '서울시 마포구 육류로 101'
+        },
+        {
+            'name': '양념도매',
+            'contact': '02-567-8901',
+            'order_method': 'email',
+            'email': 'spice@example.com',
+            'address': '서울시 용산구 양념로 202'
+        }
+    ]
+    
+    for sup_data in suppliers:
+        supplier = Supplier.query.filter_by(name=sup_data['name']).first()
+        if not supplier:
+            supplier = Supplier(**sup_data)
+            db.session.add(supplier)
+    
+    db.session.commit()
+    
+    # 재고 품목 생성
+    items = [
+        {
+            'name': '돼지고기',
+            'category': '육류',
+            'unit': 'kg',
+            'min_quantity': 10,
+            'current_quantity': 20,
+            'unit_price': 15000,
+            'supplier_id': 4  # 육류도매
+        },
+        {
+            'name': '쌀',
+            'category': '식자재',
+            'unit': 'kg',
+            'min_quantity': 50,
+            'current_quantity': 100,
+            'unit_price': 5000,
+            'supplier_id': 1  # 신선식품
+        },
+        {
+            'name': '소고기',
+            'category': '육류',
+            'unit': 'kg',
+            'min_quantity': 5,
+            'current_quantity': 10,
+            'unit_price': 30000,
+            'supplier_id': 4  # 육류도매
+        },
+        {
+            'name': '고춧가루',
+            'category': '양념',
+            'unit': 'kg',
+            'min_quantity': 3,
+            'current_quantity': 5,
+            'unit_price': 20000,
+            'supplier_id': 5  # 양념도매
+        },
+        {
+            'name': '된장',
+            'category': '양념',
+            'unit': 'kg',
+            'min_quantity': 2,
+            'current_quantity': 4,
+            'unit_price': 8000,
+            'supplier_id': 5  # 양념도매
+        },
+        {
+            'name': '고등어',
+            'category': '수산물',
+            'unit': '마리',
+            'min_quantity': 10,
+            'current_quantity': 15,
+            'unit_price': 5000,
+            'supplier_id': 2  # 건어물상사
+        },
+        {
+            'name': '사과',
+            'category': '과일',
+            'unit': '개',
+            'min_quantity': 20,
+            'current_quantity': 30,
+            'unit_price': 2000,
+            'supplier_id': 3  # 청과물도매
+        }
+    ]
+    
+    for item_data in items:
+        item = InventoryItem.query.filter_by(name=item_data['name']).first()
+        if not item:
+            item = InventoryItem(**item_data)
+            db.session.add(item)
+    
+    db.session.commit()
+    
+    # 예시 주문 생성
+    supplier = Supplier.query.first()
+    if supplier:
+        # 첫 번째 주문
+        order1 = Order(
+            user_id=admin.id,
+            supplier_id=supplier.id,
+            status='대기중',
+            order_date=datetime.now(),
+            delivery_date=datetime.now() + timedelta(days=1)
+        )
+        db.session.add(order1)
+        db.session.flush()
+        
+        # 두 번째 주문
+        order2 = Order(
+            user_id=admin.id,
+            supplier_id=2,  # 건어물상사
+            status='승인됨',
+            order_date=datetime.now() - timedelta(days=1),
+            delivery_date=datetime.now() + timedelta(days=1)
+        )
+        db.session.add(order2)
+        db.session.flush()
+        
+        # 주문 품목 추가
+        items = InventoryItem.query.all()
+        for item in items:
+            order_item = OrderItem(
+                order_id=order1.id,
+                item_id=item.id,
+                quantity=10,
+                unit_price=item.unit_price,
+                total_price=10 * item.unit_price
+            )
+            db.session.add(order_item)
+            
+            order_item2 = OrderItem(
+                order_id=order2.id,
+                item_id=item.id,
+                quantity=5,
+                unit_price=item.unit_price,
+                total_price=5 * item.unit_price
+            )
+            db.session.add(order_item2)
+        
+        db.session.commit()
+
 # 메인 페이지 라우트
 @app.route('/')
 def index():
@@ -130,6 +379,7 @@ with app.app_context():
     db.drop_all()  # 기존 데이터베이스 삭제
     db.create_all()  # 새로운 데이터베이스 생성
     create_admin()  # 관리자 계정 생성
+    create_sample_data()  # 예시 데이터 생성
 
 if __name__ == '__main__':
     logger.info('레스토랑 시스템 시작')

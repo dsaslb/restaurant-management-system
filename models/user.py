@@ -22,6 +22,11 @@ class User(UserMixin, db.Model):
     schedule_history = db.relationship('ScheduleHistory', back_populates='user')
     notifications = db.relationship('Notification', back_populates='user')
     
+    @property
+    def is_admin(self):
+        """관리자 여부를 반환합니다."""
+        return self.role == 'admin' if self.role else False
+    
     def set_password(self, password):
         """비밀번호 설정"""
         self.password_hash = generate_password_hash(password)
