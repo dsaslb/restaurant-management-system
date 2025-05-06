@@ -12,6 +12,7 @@ import os
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_login import login_required, current_user
 import logging
+from typing import Dict, Any, Optional, cast
 
 contract_bp = Blueprint('contracts', __name__)
 logger = logging.getLogger(__name__)
@@ -26,8 +27,8 @@ def create_contract(user_id):
                 employee_id=data.get('employee_id'),
                 title=data.get('title'),
                 content=data.get('content'),
-                start_date=datetime.strptime(data.get('start_date'), '%Y-%m-%d'),
-                end_date=datetime.strptime(data.get('end_date'), '%Y-%m-%d'),
+                start_date=datetime.strptime(data.get('start_date'), '%Y-%m-%d').date(),
+                end_date=datetime.strptime(data.get('end_date'), '%Y-%m-%d').date(),
                 signed=False
             )
             

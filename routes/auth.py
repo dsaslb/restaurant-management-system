@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 import jwt
 import os
 from functools import wraps
+from typing import Optional
+import logging
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -13,6 +15,22 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 JWT_SECRET = os.getenv('JWT_SECRET', 'your-secret-key')
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION = timedelta(hours=1)
+
+logger = logging.getLogger(__name__)
+
+def create_admin_user():
+    """관리자 계정 생성"""
+    admin = User.query.filter_by(username='admin01').first()
+    if not admin:
+        admin = User(
+            username='admin01',
+            email='admin@example.com',
+            role='admin'
+        )
+        admin.set_password('1234')
+        db.session.add(admin)
+        db.session.commit()
+        print("관리자 계정이 생성되었습니다.")
 
 def create_jwt_token(user_id: int) -> str:
     """JWT 토큰 생성"""
@@ -22,7 +40,7 @@ def create_jwt_token(user_id: int) -> str:
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-def verify_jwt_token(token: str) -> int:
+def verify_jwt_token(token: str) -> Optional[int]:
     """JWT 토큰 검증"""
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
@@ -57,12 +75,28 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        
+        logger.info(f'로그인 시도: {username}')
+        
         user = User.query.filter_by(username=username).first()
         
-        if user and user.check_password(password):
-            login_user(user)
-            flash('로그인되었습니다.', 'success')
-            return redirect(url_for('employee.index'))
+        if user:
+            logger.info(f'사용자 찾음: {user.username}, is_active={user.is_active}')
+            
+            if not user.is_active:
+                logger.warning(f'비활성화된 계정: {username}')
+                flash('비활성화된 계정입니다.', 'error')
+                return render_template('auth/login.html')
+            
+            if user.check_password(password):
+                logger.info(f'로그인 성공: {username}')
+                login_user(user)
+                flash('로그인되었습니다.', 'success')
+                return redirect(url_for('main.dashboard'))
+            else:
+                logger.warning(f'비밀번호 불일치: {username}')
+        else:
+            logger.warning(f'사용자를 찾을 수 없음: {username}')
         
         flash('잘못된 사용자 이름 또는 비밀번호입니다.', 'error')
     
@@ -80,7 +114,7 @@ def logout():
 def register():
     """회원가입"""
     if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('main.index'))
     
     if request.method == 'POST':
         username = request.form.get('username')

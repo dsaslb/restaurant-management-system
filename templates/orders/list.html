@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">발주 관리</h4>
+                    <a href="{{ url_for('orders.create_order') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>새 발주
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- 필터 -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">전체 상태</option>
+                                <option value="대기중">대기중</option>
+                                <option value="승인">승인</option>
+                                <option value="입고완료">입고완료</option>
+                                <option value="취소">취소</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="categoryFilter">
+                                <option value="">전체 카테고리</option>
+                                {% for category in categories %}
+                                <option value="{{ category.value }}">{{ category.value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchInput" placeholder="제품명 검색...">
+                                <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('orders.order_statistics') }}" class="btn btn-info w-100">
+                                <i class="fas fa-chart-bar me-2"></i>통계
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- 발주 목록 -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>발주일</th>
+                                    <th>제품명</th>
+                                    <th>카테고리</th>
+                                    <th>수량</th>
+                                    <th>입고예정일</th>
+                                    <th>상태</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.order_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ order.inventory.name }}</td>
+                                    <td>{{ order.inventory.category.value }}</td>
+                                    <td>{{ order.quantity }}{{ order.inventory.unit }}</td>
+                                    <td>{{ order.delivery_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ order.status|status_color }}">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if order.status == '대기중' %}
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-success" onclick="updateOrderStatus({{ order.id }}, '승인')">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="updateOrderStatus({{ order.id }}, '취소')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        {% elif order.status == '승인' %}
+                                        <button class="btn btn-sm btn-primary" onclick="updateOrderStatus({{ order.id }}, '입고완료')">
+                                            <i class="fas fa-box"></i> 입고
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 상태 필터링
+document.getElementById('statusFilter').addEventListener('change', filterOrders);
+document.getElementById('categoryFilter').addEventListener('change', filterOrders);
+document.getElementById('searchButton').addEventListener('click', filterOrders);
+
+function filterOrders() {
+    const status = document.getElementById('statusFilter').value;
+    const category = document.getElementById('categoryFilter').value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const rowStatus = row.querySelector('td:nth-child(6)').textContent.trim();
+        const rowCategory = row.querySelector('td:nth-child(3)').textContent.trim();
+        const rowName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        
+        const statusMatch = !status || rowStatus === status;
+        const categoryMatch = !category || rowCategory === category;
+        const searchMatch = !search || rowName.includes(search);
+        
+        row.style.display = statusMatch && categoryMatch && searchMatch ? '' : 'none';
+    });
+}
+
+// 발주 상태 업데이트
+function updateOrderStatus(orderId, status) {
+    if (!confirm(`발주 상태를 "${status}"로 변경하시겠습니까?`)) {
+        return;
+    }
+    
+    fetch(`/orders/${orderId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `status=${status}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            alert(data.message);
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('상태 업데이트에 실패했습니다.');
+    });
+}
+</script>
+{% endblock %} 

@@ -7,25 +7,34 @@ load_dotenv()
 class Config:
     """기본 설정"""
     # 기본 설정
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-123'
+    SECRET_KEY = os.getenv('SECRET_KEY', 'dev')
+    DEBUG = os.getenv('FLASK_ENV') == 'development'
     JWT_SECRET_KEY = 'your-jwt-secret-key'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     
     # 데이터베이스 설정
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///restaurant.db'
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///restaurant.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # 파일 업로드 설정
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
+    # POS 시스템 설정
+    POS_API_URL = os.getenv('POS_API_URL', 'http://localhost:5001/api')
+    POS_API_KEY = os.getenv('POS_API_KEY', 'test_key')
     
     # 로깅 설정
-    LOG_LEVEL = 'INFO'
-    LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+    LOG_FILE = os.getenv('LOG_FILE', 'logs/restaurant.log')
+    LOG_FORMAT = '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    LOG_MAX_BYTES = 10240
+    LOG_BACKUP_COUNT = 10
     
     # 세션 설정
     SESSION_TYPE = 'filesystem'
-    PERMANENT_SESSION_LIFETIME = timedelta(days=1)
+    PERMANENT_SESSION_LIFETIME = 1800  # 30분
+    
+    # 업로드 설정
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
     
     # 보안 설정
     SESSION_COOKIE_SECURE = True
@@ -34,13 +43,16 @@ class Config:
     REMEMBER_COOKIE_HTTPONLY = True
     
     # 카카오 알림톡 설정
-    KAKAO_TEMPLATE_ID = 'your-kakao-template-id'
-    KAKAO_ACCESS_TOKEN = 'your-kakao-access-token'
-    KAKAO_SENDER_KEY = 'your-kakao-sender-key'
-    KAKAO_API_KEY = 'your-kakao-api-key'
+    KAKAO_REST_API_KEY = os.environ.get('KAKAO_REST_API_KEY', 'your-kakao-rest-api-key')
+    KAKAO_TEMPLATE_ID = os.environ.get('KAKAO_TEMPLATE_ID', 'your-kakao-template-id')
     
     FLASK_APP = os.getenv('FLASK_APP', 'app.py')
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+
+# 카카오 API 설정
+KAKAO_ACCESS_TOKEN = os.environ.get('KAKAO_ACCESS_TOKEN')
+KAKAO_SENDER_KEY = os.environ.get('KAKAO_SENDER_KEY')
+KAKAO_API_KEY = os.environ.get('KAKAO_API_KEY')
 
 class DevelopmentConfig(Config):
     """개발 환경 설정"""

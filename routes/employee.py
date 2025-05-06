@@ -5,20 +5,10 @@ from datetime import datetime, timedelta
 from utils.decorators import admin_required
 from werkzeug.security import generate_password_hash
 import logging
-from functools import wraps
 
 # Blueprint 객체 생성
 employee_bp = Blueprint('employee', __name__, url_prefix='/employee')
 logger = logging.getLogger(__name__)
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_admin:
-            flash('관리자 권한이 필요합니다.', 'error')
-            return redirect(url_for('main.index'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 @employee_bp.route('/')
 @login_required

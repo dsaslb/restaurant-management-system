@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash, send_file
 from flask_login import login_required, current_user
-from models import db, InventoryItem, Ingredient, OrderItem, StockItem, StockTransaction, StockUsageAlert, Notification, User
-from datetime import datetime, date
+from models import db, InventoryItem, Ingredient, OrderItem, StockItem, StockTransaction, StockUsageAlert, User, InventoryBatch, Order
+from datetime import datetime, date, timedelta
 from utils.alerts import send_alert
 from utils.inventory_report import get_monthly_inventory_report
 from utils.inventory import consume_stock
@@ -9,7 +9,10 @@ from utils.decorators import admin_required
 from utils.inventory_stats import get_usage_statistics
 from utils.excel_export import export_stock_usage_to_excel
 from utils.kakao import send_kakao_to_admin
+from utils.notification import send_notification
 import logging
+import os
+from werkzeug.utils import secure_filename
 
 inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
 logger = logging.getLogger(__name__)
@@ -213,6 +216,85 @@ def get_items():
         'status': 'success',
         'items': [item.to_dict() for item in items]
     }) 
+
+@inventory_bp.route('/order', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def order():
+    if request.method == 'POST':
+        try:
+            # 주문 생성
+            order = Order(
+                order_number=f"ORD-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                user_id=current_user.id,
+                status='pending'
+            )
+            db.session.add(order)
+            
+            # 주문 항목 처리
+            total_amount = 0
+            for key, value in request.form.items():
+                if key.startswith('qty_') and int(value) > 0:
+                    item_id = int(key.split('_')[1])
+                    quantity = int(value)
+                    
+                    item = InventoryItem.query.get(item_id)
+                    if item:
+                        # 주문 항목 생성
+                        order_item = OrderItem(
+                            order=order,
+                            item_id=item_id,
+                            quantity=quantity,
+                            unit_price=item.unit_price or 0,
+                            total_price=quantity * (item.unit_price or 0)
+                        )
+                        db.session.add(order_item)
+                        total_amount += order_item.total_price
+            
+            order.total_amount = total_amount
+            db.session.commit()
+            
+            flash('발주가 성공적으로 등록되었습니다.', 'success')
+            return redirect(url_for('inventory.orders'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'발주 등록 중 오류가 발생했습니다: {str(e)}', 'error')
+            return redirect(url_for('inventory.order'))
+    
+    # GET 요청 처리
+    items = InventoryItem.query.all()
+    today = date.today()
+    warning_threshold = today + timedelta(days=3)
+    
+    inventory_list = []
+    for item in items:
+        # 남은 수량이 있는 배치 중 가장 빠른 유통기한 찾기 (FIFO)
+        batch = (
+            InventoryBatch.query
+            .filter(InventoryBatch.item_id == item.id)
+            .filter((InventoryBatch.quantity - InventoryBatch.used_quantity) > 0)
+            .order_by(InventoryBatch.expiration_date)
+            .first()
+        )
+        
+        expire_date = batch.expiration_date if batch else None
+        expire_soon = bool(expire_date and expire_date <= warning_threshold)
+        
+        inventory_list.append({
+            'item': item,
+            'expire_date': expire_date,
+            'expire_soon': expire_soon
+        })
+    
+    return render_template('inventory/order.html', inventory_list=inventory_list)
+
+@inventory_bp.route('/orders')
+@login_required
+@admin_required
+def orders():
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    return render_template('inventory/orders.html', orders=orders)
 
 @inventory_bp.route('/order/new', methods=['GET', 'POST'])
 @login_required
@@ -817,4 +899,55 @@ def delete_stock_usage_alert(alert_id):
     except Exception as e:
         db.session.rollback()
         flash(f'오류가 발생했습니다: {str(e)}', 'error')
-        return redirect(url_for('inventory.stock_usage_alerts')) 
+        return redirect(url_for('inventory.stock_usage_alerts'))
+
+@inventory_bp.route('/items')
+@login_required
+def item_list():
+    """재고 품목 목록"""
+    items = InventoryItem.query.all()
+    inventory_list = []
+    
+    for item in items:
+        # 남은 수량이 있는 배치만 필터링하고 유통기한 순으로 정렬
+        batches = InventoryBatch.query.filter_by(item_id=item.id)\
+            .filter(InventoryBatch.quantity - InventoryBatch.used_quantity > 0)\
+            .order_by(InventoryBatch.expiration_date).all()
+        
+        if batches:
+            # 첫 번째 배치 정보 사용
+            first_batch = batches[0]
+            inventory_list.append({
+                'item': item,
+                'expire_date': first_batch.expiration_date,
+                'expire_soon': first_batch.expire_soon,
+                'available_quantity': first_batch.available_quantity
+            })
+    
+    return render_template('inventory/items.html', inventory_list=inventory_list)
+
+@inventory_bp.route('/order/<int:order_id>/view')
+@login_required
+@admin_required
+def view_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    return render_template('inventory/view_order.html', order=order)
+
+@inventory_bp.route('/order/<int:order_id>/cancel', methods=['POST'])
+@login_required
+@admin_required
+def cancel_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    if order.status != 'pending':
+        flash('대기 중인 발주만 취소할 수 있습니다.', 'error')
+        return redirect(url_for('inventory.view_order', order_id=order.id))
+    
+    try:
+        order.status = 'cancelled'
+        db.session.commit()
+        flash('발주가 취소되었습니다.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'발주 취소 중 오류가 발생했습니다: {str(e)}', 'error')
+    
+    return redirect(url_for('inventory.orders')) 

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>근무 일정</h2>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('schedule.add_schedule') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 일정 추가
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                {% for date_str, schedules in schedule_by_date.items() %}
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                {{ date_str }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if schedules %}
+                            <ul class="list-group list-group-flush">
+                                {% for schedule in schedules %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ schedule.user.username }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                {{ schedule.start_time.strftime('%H:%M') }} - 
+                                                {{ schedule.end_time.strftime('%H:%M') }}
+                                                ({{ schedule.position }})
+                                            </small>
+                                        </div>
+                                        {% if current_user.is_admin %}
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('schedule.edit_schedule', schedule_id=schedule.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ url_for('schedule.delete_schedule', schedule_id=schedule.id) }}" 
+                                                  method="POST" 
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="text-muted text-center mb-0">등록된 일정이 없습니다.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

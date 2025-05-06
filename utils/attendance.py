@@ -1,17 +1,12 @@
 # utils/attendance.py
 
 from models import Attendance
-
-def get_last_attendance(user_id):
-    return Attendance.query.filter_by(user_id=user_id).order_by(Attendance.timestamp.desc()).first()
-
-# utils/attendance.py
-
-from models import Attendance
 from datetime import date
 from sqlalchemy import desc
+from typing import Union, Dict, Any
 
-def get_last_attendance(user_id):
+def get_last_attendance(user_id: int) -> Union[Dict[str, Any], str]:
+    """사용자의 마지막 출석 기록을 조회합니다."""
     today = date.today()
     record = Attendance.query.filter_by(user_id=user_id).order_by(desc(Attendance.timestamp)).first()
     if not record:

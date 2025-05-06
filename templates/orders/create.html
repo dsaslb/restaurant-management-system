@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">새 발주 등록</h4>
+                </div>
+                <div class="card-body">
+                    <form id="orderForm" method="POST">
+                        <!-- 제품 선택 -->
+                        <div class="mb-3">
+                            <label for="inventory" class="form-label">제품 선택</label>
+                            <select class="form-select" id="inventory" name="inventory_id" required>
+                                <option value="">제품을 선택하세요</option>
+                                {% for inventory in inventories %}
+                                <option value="{{ inventory.id }}" 
+                                        data-price="{{ inventory.price }}"
+                                        data-unit="{{ inventory.unit }}"
+                                        data-stock="{{ inventory.quantity }}">
+                                    {{ inventory.name }} (현재 재고: {{ inventory.quantity }}{{ inventory.unit }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- 수량 입력 -->
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">발주 수량</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                                <span class="input-group-text" id="unitDisplay">단위</span>
+                            </div>
+                            <div class="form-text">현재 재고: <span id="currentStock">0</span><span id="stockUnit"></span></div>
+                        </div>
+                        
+                        <!-- 입고 예정일 -->
+                        <div class="mb-3">
+                            <label for="deliveryDate" class="form-label">입고 예정일</label>
+                            <input type="date" class="form-control" id="deliveryDate" name="delivery_date" required>
+                        </div>
+                        
+                        <!-- 발주 금액 -->
+                        <div class="mb-3">
+                            <label class="form-label">예상 발주 금액</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="totalAmount" readonly>
+                                <span class="input-group-text">원</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 발주 메모 -->
+                        <div class="mb-3">
+                            <label for="memo" class="form-label">메모</label>
+                            <textarea class="form-control" id="memo" name="memo" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>발주 등록
+                            </button>
+                            <a href="{{ url_for('orders.order_list') }}" class="btn btn-secondary ms-2">
+                                <i class="fas fa-times me-2"></i>취소
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inventorySelect = document.getElementById('inventory');
+    const quantityInput = document.getElementById('quantity');
+    const unitDisplay = document.getElementById('unitDisplay');
+    const currentStock = document.getElementById('currentStock');
+    const stockUnit = document.getElementById('stockUnit');
+    const totalAmount = document.getElementById('totalAmount');
+    
+    // 제품 선택 시 이벤트
+    inventorySelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const unit = selectedOption.dataset.unit;
+            const stock = selectedOption.dataset.stock;
+            const price = selectedOption.dataset.price;
+            
+            unitDisplay.textContent = unit;
+            currentStock.textContent = stock;
+            stockUnit.textContent = unit;
+            
+            // 수량 입력 시 금액 계산
+            quantityInput.addEventListener('input', function() {
+                const quantity = parseInt(this.value) || 0;
+                const amount = quantity * price;
+                totalAmount.value = amount.toLocaleString();
+            });
+        } else {
+            unitDisplay.textContent = '단위';
+            currentStock.textContent = '0';
+            stockUnit.textContent = '';
+            totalAmount.value = '';
+        }
+    });
+    
+    // 폼 제출 시 이벤트
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('{{ url_for("orders.create_order") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert(data.message);
+                window.location.href = '{{ url_for("orders.order_list") }}';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('발주 등록에 실패했습니다.');
+        });
+    });
+    
+    // 입고 예정일 기본값 설정 (다음날)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('deliveryDate').value = tomorrow.toISOString().split('T')[0];
+});
+</script>
+{% endblock %} 

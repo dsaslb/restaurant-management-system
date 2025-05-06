@@ -1,18 +1,18 @@
 from flask import jsonify
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 def api_response(
-    status: str = 'success',
+    status: Union[str, Dict[str, Any]] = 'success',
     message: Optional[str] = None,
-    data: Optional[Dict[str, Any]] = None,
+    data: Optional[Union[Dict[str, Any], list, Any]] = None,
     status_code: int = 200
 ) -> tuple:
     """일관된 API 응답 형식 생성
     
     Args:
-        status (str): 응답 상태 ('success' 또는 'error')
+        status (Union[str, Dict[str, Any]]): 응답 상태 ('success' 또는 'error') 또는 상태 정보를 담은 딕셔너리
         message (str, optional): 응답 메시지
-        data (dict, optional): 응답 데이터
+        data (Union[Dict[str, Any], list, Any], optional): 응답 데이터
         status_code (int): HTTP 상태 코드
         
     Returns:

@@ -6,8 +6,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 import logging
 import os
-from sqlalchemy import and_, func, case
+from sqlalchemy import and_, func, case, cast, Integer, DateTime
 from utils.salary_utils import calculate_salary
+from typing import List, Tuple, Any
 
 analysis_bp = Blueprint('analysis', __name__)
 logger = logging.getLogger(__name__)
@@ -248,87 +249,79 @@ def store_kpi(store_name):
             )
         ).count()
 
-        # 2. 근무 현황
-        attendance_stats = db.session.query(
-            func.avg(func.julianday(Attendance.clock_out) - func.julianday(Attendance.clock_in)).label('avg_hours'),
-            func.count(Attendance.id).label('total_attendances'),
-            func.count(case([(Attendance.clock_in > Schedule.start_time + timedelta(minutes=10), 1)])).label('late_count')
+        # 2. 근무 시간 분석
+        work_hours = db.session.query(
+            func.sum(
+                case(
+                    [
+                        (and_(
+                            Attendance.clock_in.isnot(None),
+                            Attendance.clock_out.isnot(None)
+                        ), func.extract('epoch', Attendance.clock_out - Attendance.clock_in) / 3600)
+                    ],
+                    else_=0
+                )
+            ).label('total_hours')
         ).join(
             Schedule, Attendance.schedule_id == Schedule.id
-        ).join(
-            Employee, Schedule.employee_id == Employee.id
         ).filter(
             and_(
-                Employee.store_id == store.id,
-                Attendance.date >= start_date,
-                Attendance.date <= end_date
+                Schedule.date >= start_date,
+                Schedule.date <= end_date,
+                Schedule.store_id == store.id
             )
-        ).first()
+        ).scalar() or 0
 
-        avg_work_hours = round(attendance_stats.avg_hours * 24, 2) if attendance_stats.avg_hours else 0
-        late_rate = round(attendance_stats.late_count / attendance_stats.total_attendances * 100, 1) if attendance_stats.total_attendances else 0
-
-        # 3. 급여 현황
-        salaries = []
-        for employee in Employee.query.filter_by(store_id=store.id).all():
-            try:
-                salary_data = calculate_salary(
-                    employee.user_id,
-                    start_date,
-                    end_date
+        # 3. 지각률 계산
+        late_count = db.session.query(
+            func.count(
+                case(
+                    [
+                        (and_(
+                            Attendance.clock_in.isnot(None),
+                            Attendance.clock_in > cast(Schedule.start_time, DateTime)
+                        ), 1)
+                    ],
+                    else_=0
                 )
-                salaries.append(salary_data['payments']['total_salary'])
-            except Exception as e:
-                logger.error(f"급여 계산 오류: {employee.user.name} ({str(e)})")
-                continue
-
-        avg_salary = round(sum(salaries) / len(salaries)) if salaries else 0
-
-        # 4. 피드백 현황
-        feedback_stats = db.session.query(
-            func.avg(WorkFeedback.rating).label('avg_rating'),
-            func.count(WorkFeedback.id).label('total_feedbacks')
+            ).label('late_count')
         ).join(
-            Schedule, WorkFeedback.schedule_id == Schedule.id
-        ).join(
-            Employee, Schedule.employee_id == Employee.id
+            Schedule, Attendance.schedule_id == Schedule.id
         ).filter(
             and_(
-                Employee.store_id == store.id,
-                WorkFeedback.submitted_at >= start_date,
-                WorkFeedback.submitted_at <= end_date
+                Schedule.date >= start_date,
+                Schedule.date <= end_date,
+                Schedule.store_id == store.id
             )
-        ).first()
+        ).scalar() or 0
 
-        avg_rating = round(feedback_stats.avg_rating, 1) if feedback_stats.avg_rating else 0
+        total_shifts = db.session.query(
+            func.count(Schedule.id)
+        ).filter(
+            and_(
+                Schedule.date >= start_date,
+                Schedule.date <= end_date,
+                Schedule.store_id == store.id
+            )
+        ).scalar() or 1
+
+        late_rate = (late_count / total_shifts) * 100
 
         return jsonify({
-            'store': {
-                'name': store.name,
-                'address': store.address,
-                'phone': store.phone
-            },
+            'store_name': store_name,
             'period': {
                 'start_date': start_date.isoformat(),
                 'end_date': end_date.isoformat()
             },
-            'employees': {
-                'total': total_employees,
-                'active': active_employees,
-                'inactive': total_employees - active_employees
+            'employee_stats': {
+                'total_employees': total_employees,
+                'active_employees': active_employees,
+                'employee_utilization_rate': (active_employees / total_employees * 100) if total_employees > 0 else 0
             },
-            'attendance': {
-                'avg_work_hours': avg_work_hours,
-                'total_attendances': attendance_stats.total_attendances,
-                'late_rate': late_rate
-            },
-            'salary': {
-                'avg_salary': avg_salary,
-                'total_payroll': sum(salaries) if salaries else 0
-            },
-            'feedback': {
-                'avg_rating': avg_rating,
-                'total_feedbacks': feedback_stats.total_feedbacks
+            'work_stats': {
+                'total_work_hours': round(work_hours, 2),
+                'average_work_hours_per_day': round(work_hours / 90, 2),
+                'late_rate': round(late_rate, 2)
             }
         })
 

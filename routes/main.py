@@ -9,9 +9,7 @@ main_bp = Blueprint('main', __name__)
 @login_required
 def index():
     """메인 페이지"""
-    if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
-    return render_template('main/index.html')
+    return redirect(url_for('main.dashboard'))
 
 @main_bp.route('/dashboard')
 @login_required
@@ -56,7 +54,7 @@ def dashboard():
     ).count()
     
     # 재고 부족 항목 수
-    low_stock_count = 5  # 예시 데이터
+    low_stock_count = 5
     
     # 최근 재고 변동
     recent_transactions = [

@@ -1,11 +1,11 @@
-from flask import Blueprint, request, jsonify, render_template, session
+from flask import Blueprint, request, jsonify, render_template, session, redirect, url_for, flash
 from models import Schedule, Employee, db, User, ScheduleHistory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from utils.error_handler import ValidationError, DatabaseError, NotFoundError
 from utils.response import api_response
-from utils.decorators import db_session_required, validate_input, log_request
+from utils.decorators import db_session_required, validate_input, log_request, admin_required
 import logging
 from utils.kakao_notify import send_kakao_notification
 
@@ -18,34 +18,110 @@ def index():
 
 @schedule_bp.route('/schedule')
 @login_required
-def schedule_page():
-    """스케줄 관리 페이지"""
-    if not current_user.is_admin:
-        return render_template('error.html', message='접근 권한이 없습니다.'), 403
-    return render_template('schedule/calendar.html')
+def schedule_view():
+    """근무 일정 조회"""
+    # 현재 날짜 기준으로 이번 주 일정 조회
+    today = datetime.now().date()
+    start_of_week = today - timedelta(days=today.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
 
-@schedule_bp.route('/my_schedule')
+    schedules = (
+        Schedule.query
+        .filter(Schedule.date >= start_of_week)
+        .filter(Schedule.date <= end_of_week)
+        .order_by(Schedule.date, Schedule.start_time)
+        .all()
+    )
+
+    # 일정을 날짜별로 그룹화
+    schedule_by_date = {}
+    for schedule in schedules:
+        date_str = schedule.date.strftime('%Y-%m-%d')
+        if date_str not in schedule_by_date:
+            schedule_by_date[date_str] = []
+        schedule_by_date[date_str].append(schedule)
+
+    return render_template('schedule/schedule.html', 
+                         schedule_by_date=schedule_by_date,
+                         start_of_week=start_of_week,
+                         end_of_week=end_of_week)
+
+@schedule_bp.route('/schedule/add', methods=['GET', 'POST'])
 @login_required
-def my_schedule():
-    """직원 스케줄 페이지"""
+@admin_required
+def add_schedule():
+    """근무 일정 추가"""
+    if request.method == 'POST':
+        try:
+            user_id = request.form.get('user_id')
+            date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
+            start_time = datetime.strptime(request.form.get('start_time'), '%H:%M').time()
+            end_time = datetime.strptime(request.form.get('end_time'), '%H:%M').time()
+            position = request.form.get('position')
+
+            schedule = Schedule(
+                user_id=user_id,
+                date=date,
+                start_time=start_time,
+                end_time=end_time,
+                position=position
+            )
+            db.session.add(schedule)
+            db.session.commit()
+
+            flash('근무 일정이 추가되었습니다.', 'success')
+            return redirect(url_for('schedule.schedule_view'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'근무 일정 추가 중 오류가 발생했습니다: {str(e)}', 'error')
+
+    # 직원 목록 조회
+    employees = User.query.filter_by(is_active=True).all()
+    return render_template('schedule/add_schedule.html', employees=employees)
+
+@schedule_bp.route('/schedule/<int:schedule_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_schedule(schedule_id):
+    """근무 일정 수정"""
+    schedule = Schedule.query.get_or_404(schedule_id)
+    
+    if request.method == 'POST':
+        try:
+            schedule.user_id = request.form.get('user_id')
+            schedule.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
+            schedule.start_time = datetime.strptime(request.form.get('start_time'), '%H:%M').time()
+            schedule.end_time = datetime.strptime(request.form.get('end_time'), '%H:%M').time()
+            schedule.position = request.form.get('position')
+            schedule.status = request.form.get('status')
+
+            db.session.commit()
+            flash('근무 일정이 수정되었습니다.', 'success')
+            return redirect(url_for('schedule.schedule_view'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'근무 일정 수정 중 오류가 발생했습니다: {str(e)}', 'error')
+
+    employees = User.query.filter_by(is_active=True).all()
+    return render_template('schedule/edit_schedule.html', 
+                         schedule=schedule, 
+                         employees=employees)
+
+@schedule_bp.route('/schedule/<int:schedule_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_schedule(schedule_id):
+    """근무 일정 삭제"""
+    schedule = Schedule.query.get_or_404(schedule_id)
     try:
-        # 현재 사용자의 스케줄 조회
-        schedules = Schedule.query.filter_by(user_id=current_user.id).all()
-        
-        # 스케줄 데이터 변환
-        schedule_list = [{
-            'id': s.id,
-            'date': s.date.strftime('%Y-%m-%d'),
-            'start_time': s.start_time.strftime('%H:%M'),
-            'end_time': s.end_time.strftime('%H:%M'),
-            'confirmed': s.confirmed
-        } for s in schedules]
-        
-        return render_template('schedule/my_schedule.html', schedules=schedule_list)
-        
+        db.session.delete(schedule)
+        db.session.commit()
+        flash('근무 일정이 삭제되었습니다.', 'success')
     except Exception as e:
-        logger.error(f"직원 스케줄 조회 중 오류 발생: {str(e)}")
-        return render_template('error.html', message='스케줄 조회 중 오류가 발생했습니다.'), 500
+        db.session.rollback()
+        flash(f'근무 일정 삭제 중 오류가 발생했습니다: {str(e)}', 'error')
+    
+    return redirect(url_for('schedule.schedule_view'))
 
 @schedule_bp.route('/api/schedule', methods=['GET'])
 @jwt_required()

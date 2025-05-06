@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">제품 이미지 업로드</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" class="dropzone" id="uploadForm">
+                        <div class="fallback">
+                            <div class="mb-3">
+                                <label for="image" class="form-label">제품 이미지 선택</label>
+                                <input type="file" class="form-control" id="image" name="image" accept=".jpg,.jpeg,.png" required>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>업로드
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <h5>업로드 가이드</h5>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>지원 형식: JPG, JPEG, PNG</li>
+                            <li><i class="fas fa-check text-success me-2"></i>최대 파일 크기: 10MB</li>
+                            <li><i class="fas fa-check text-success me-2"></i>이미지가 선명하고 잘 보이도록 촬영해주세요</li>
+                            <li><i class="fas fa-check text-success me-2"></i>제품명과 유통기한이 잘 보이도록 해주세요</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('image');
+    const file = fileInput.files[0];
+    
+    if (file) {
+        // 파일 크기 검증 (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            e.preventDefault();
+            alert('파일 크기는 10MB를 초과할 수 없습니다.');
+            return;
+        }
+        
+        // 파일 형식 검증
+        const allowedTypes = ['image/jpeg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            e.preventDefault();
+            alert('지원하지 않는 파일 형식입니다. (JPG, JPEG, PNG만 가능)');
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}
+{% endblock %} 

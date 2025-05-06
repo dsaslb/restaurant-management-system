@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">재고 발주</h5>
+            <button type="submit" class="btn btn-primary" form="orderForm">
+                <i class="fas fa-save"></i> 발주하기
+            </button>
+        </div>
+        <div class="card-body">
+            <form id="orderForm" method="POST">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>품목</th>
+                                <th>유통기한</th>
+                                <th>발주 수량</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in inventory_list %}
+                            <tr>
+                                <td>{{ entry.item.name }}</td>
+                                <td>
+                                    {% if entry.expire_soon %}
+                                    <span class="text-danger">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        {{ entry.expire_date }}
+                                    </span>
+                                    {% else %}
+                                    {{ entry.expire_date or '—' }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               name="qty_{{ entry.item.id }}" 
+                                               min="0" 
+                                               value="0"
+                                               style="width: 100px;" />
+                                        <span class="input-group-text">{{ entry.item.unit }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-danger {
+    color: #dc3545 !important;
+}
+.fa-exclamation-triangle {
+    margin-right: 5px;
+}
+</style>
+{% endblock %} 

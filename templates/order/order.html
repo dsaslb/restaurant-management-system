@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>발주 관리</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>품목</th>
+                                <th>현재 재고</th>
+                                <th>유통기한</th>
+                                <th>발주 수량</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in inventory_list %}
+                            <tr>
+                                <td>{{ entry.item.name }}</td>
+                                <td>{{ entry.item.current_stock }}</td>
+                                <td>
+                                    {% if entry.expire_date %}
+                                        {% if entry.expire_soon %}
+                                            <span class="text-danger">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                {{ entry.expire_date.strftime('%Y-%m-%d') }}
+                                            </span>
+                                        {% else %}
+                                            {{ entry.expire_date.strftime('%Y-%m-%d') }}
+                                        {% endif %}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               name="order_quantity_{{ entry.item.id }}" 
+                                               class="form-control" 
+                                               min="0" 
+                                               value="0"
+                                               style="width: 100px;">
+                                        <span class="input-group-text">{{ entry.item.unit }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="text-end mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-shopping-cart"></i> 발주 요청
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 발주 수량 입력 시 유효성 검사
+    const quantityInputs = document.querySelectorAll('input[type="number"]');
+    quantityInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value < 0) {
+                this.value = 0;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>OCR 결과 확인</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">인식된 정보</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>제품명:</strong> {{ info.name }}</p>
+                    <p><strong>유통기한:</strong> {{ info.expiration_date.strftime('%Y-%m-%d') }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>원산지:</strong> {{ info.origin }}</p>
+                    <p><strong>보관방법:</strong> {{ info.storage }}</p>
+                </div>
+            </div>
+            <div class="alert alert-info">
+                <small>OCR 신뢰도: {{ confidence }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('inventory.confirm_upload') }}">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">추가 정보 입력</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">수량</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" required min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="unit" class="form-label">단위</label>
+                            <select class="form-select" id="unit" name="unit">
+                                <option value="개">개</option>
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="L">L</option>
+                                <option value="ml">ml</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="price" class="form-label">구매 가격</label>
+                            <input type="number" class="form-control" id="price" name="price" required min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplier" class="form-label">공급업체</label>
+                            <input type="text" class="form-control" id="supplier" name="supplier">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="notes" class="form-label">비고</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">재고 등록</button>
+            <button type="submit" formaction="{{ url_for('inventory.retry_ocr') }}" class="btn btn-secondary">
+                OCR 재시도
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %} 

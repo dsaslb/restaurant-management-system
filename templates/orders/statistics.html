@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">발주 통계</h4>
+                    <a href="{{ url_for('orders.order_list') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>목록으로
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- 기간 선택 -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <input type="date" class="form-control" id="startDate">
+                                <span class="input-group-text">~</span>
+                                <input type="date" class="form-control" id="endDate">
+                                <button class="btn btn-primary" type="button" id="dateFilter">
+                                    <i class="fas fa-filter me-2"></i>적용
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 카테고리별 발주 금액 -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">카테고리별 발주 금액</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="categoryChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 업체별 발주 횟수 -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">업체별 발주 횟수</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="supplierChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 상세 통계 -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">상세 통계</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>카테고리</th>
+                                                    <th>발주 건수</th>
+                                                    <th>총 발주 금액</th>
+                                                    <th>평균 발주 금액</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for category, amount in category_stats.items() %}
+                                                <tr>
+                                                    <td>{{ category }}</td>
+                                                    <td>{{ supplier_stats.get(category, 0) }}</td>
+                                                    <td>{{ "{:,}".format(amount) }}원</td>
+                                                    <td>{{ "{:,}".format(amount / supplier_stats.get(category, 1)) }}원</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let categoryChart, supplierChart, dailyChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 기간 설정
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 1);
+    
+    document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+    
+    // 차트 초기화
+    initializeCharts();
+    
+    // 기간 필터 적용
+    document.getElementById('dateFilter').addEventListener('click', function() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        fetch('/orders/statistics/filter', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            
+            // 차트 업데이트
+            updateCharts(data);
+            
+            // 테이블 업데이트
+            updateTable(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('통계 데이터를 불러오는데 실패했습니다.');
+        });
+    });
+});
+
+function initializeCharts() {
+    // 카테고리별 발주 금액 차트
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    categoryChart = new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ category_stats.keys()|list|tojson }},
+            datasets: [{
+                data: {{ category_stats.values()|list|tojson }},
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+    
+    // 업체별 발주 횟수 차트
+    const supplierCtx = document.getElementById('supplierChart').getContext('2d');
+    supplierChart = new Chart(supplierCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ supplier_stats.keys()|list|tojson }},
+            datasets: [{
+                label: '발주 횟수',
+                data: {{ supplier_stats.values()|list|tojson }},
+                backgroundColor: '#36A2EB'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+    
+    // 일별 발주 추이 차트
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    dailyChart = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '발주 건수',
+                data: [],
+                borderColor: '#FF6384',
+                fill: false
+            }, {
+                label: '발주 금액',
+                data: [],
+                borderColor: '#36A2EB',
+                fill: false,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: '발주 건수'
+                    }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: '발주 금액'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateCharts(data) {
+    // 카테고리별 발주 금액 차트 업데이트
+    categoryChart.data.labels = Object.keys(data.category_stats);
+    categoryChart.data.datasets[0].data = Object.values(data.category_stats);
+    categoryChart.update();
+    
+    // 업체별 발주 횟수 차트 업데이트
+    supplierChart.data.labels = Object.keys(data.supplier_stats);
+    supplierChart.data.datasets[0].data = Object.values(data.supplier_stats);
+    supplierChart.update();
+    
+    // 일별 발주 추이 차트 업데이트
+    const dates = Object.keys(data.daily_stats);
+    const counts = dates.map(date => data.daily_stats[date].count);
+    const amounts = dates.map(date => data.daily_stats[date].amount);
+    
+    dailyChart.data.labels = dates;
+    dailyChart.data.datasets[0].data = counts;
+    dailyChart.data.datasets[1].data = amounts;
+    dailyChart.update();
+}
+
+function updateTable(data) {
+    const tbody = document.querySelector('table tbody');
+    tbody.innerHTML = '';
+    
+    for (const [category, amount] of Object.entries(data.category_stats)) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${category}</td>
+            <td>${data.supplier_stats[category] || 0}</td>
+            <td>${amount.toLocaleString()}원</td>
+            <td>${(amount / (data.supplier_stats[category] || 1)).toLocaleString()}원</td>
+        `;
+        tbody.appendChild(row);
+    }
+}
+</script>
+{% endblock %} 

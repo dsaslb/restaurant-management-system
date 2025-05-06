@@ -4,8 +4,13 @@ from utils.salary_calculator import calculate_salary
 import requests
 import os
 from dotenv import load_dotenv
+import logging
+from typing import Optional
+from models import db
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 def send_kakao_message(phone: str, message: str):
     """카카오톡 메시지 전송"""
@@ -83,4 +88,21 @@ def check_and_send_salary_notifications():
                     send_salary_notification(contract.employee.user.id, salary_info)
                 
     except Exception as e:
-        print(f"급여 알림 확인 중 오류 발생: {str(e)}") 
+        print(f"급여 알림 확인 중 오류 발생: {str(e)}")
+
+def send_notification(title: str, message: str, level: str = "info", user_id: Optional[int] = None):
+    """
+    알림을 발송합니다.
+    
+    Args:
+        title (str): 알림 제목
+        message (str): 알림 내용
+        level (str): 알림 레벨 (info, warning, error)
+        user_id (Optional[int]): 수신자 ID
+    """
+    try:
+        logger.info(f"알림 발송: {title} - {message}")
+        # TODO: 실제 알림 발송 로직 구현 (예: 웹소켓, 이메일, SMS 등)
+        
+    except Exception as e:
+        logger.error(f"알림 발송 중 오류 발생: {str(e)}") 

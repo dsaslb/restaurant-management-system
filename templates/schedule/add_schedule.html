@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">근무 일정 추가</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="user_id" class="form-label">직원</label>
+                            <select class="form-select" id="user_id" name="user_id" required>
+                                <option value="">직원을 선택하세요</option>
+                                {% for employee in employees %}
+                                <option value="{{ employee.id }}">{{ employee.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="date" class="form-label">날짜</label>
+                            <input type="date" class="form-control" id="date" name="date" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="start_time" class="form-label">시작 시간</label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="end_time" class="form-label">종료 시간</label>
+                                <input type="time" class="form-control" id="end_time" name="end_time" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="position" class="form-label">포지션</label>
+                            <select class="form-select" id="position" name="position" required>
+                                <option value="">포지션을 선택하세요</option>
+                                <option value="서버">서버</option>
+                                <option value="주방">주방</option>
+                                <option value="호스트">호스트</option>
+                                <option value="바텐더">바텐더</option>
+                            </select>
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{{ url_for('schedule.schedule_view') }}" class="btn btn-secondary">취소</a>
+                            <button type="submit" class="btn btn-primary">저장</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
