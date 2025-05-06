@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{% if menu %}메뉴 수정{% else %}새 메뉴 등록{% endif %}</h2>
+        <a href="{{ url_for('menu.list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 목록으로
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- 기본 정보 -->
+                        <div class="mb-3">
+                            <label class="form-label">메뉴명</label>
+                            <input type="text" 
+                                   name="name" 
+                                   class="form-control" 
+                                   value="{{ menu.name if menu else '' }}"
+                                   required>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">카테고리</label>
+                                <select name="category" class="form-select" required>
+                                    <option value="">선택하세요</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category }}"
+                                            {% if menu and menu.category == category %}selected{% endif %}>
+                                        {{ category }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">가격</label>
+                                <div class="input-group">
+                                    <input type="number" 
+                                           name="price" 
+                                           class="form-control" 
+                                           value="{{ menu.price if menu else '' }}"
+                                           required>
+                                    <span class="input-group-text">원</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">설명</label>
+                            <textarea name="description" 
+                                      class="form-control" 
+                                      rows="3">{{ menu.description if menu else '' }}</textarea>
+                        </div>
+                        
+                        <!-- 재료 선택 -->
+                        <div class="mb-3">
+                            <label class="form-label">재료</label>
+                            <select name="ingredients" 
+                                    class="form-select" 
+                                    multiple 
+                                    data-placeholder="재료를 선택하세요">
+                                {% for ingredient in ingredients %}
+                                <option value="{{ ingredient.id }}"
+                                        {% if menu and ingredient in menu.ingredients %}selected{% endif %}>
+                                    {{ ingredient.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Ctrl(Windows) 또는 Command(Mac) 키를 누른 상태에서 여러 재료를 선택할 수 있습니다.
+                            </div>
+                        </div>
+                        
+                        <!-- 상태 -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" 
+                                       name="is_active" 
+                                       class="form-check-input" 
+                                       id="isActive"
+                                       {% if not menu or menu.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="isActive">판매중</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <!-- 이미지 업로드 -->
+                        <div class="mb-3">
+                            <label class="form-label">메뉴 이미지</label>
+                            {% if menu and menu.image_url %}
+                            <div class="mb-2">
+                                <img src="{{ menu.image_url }}" 
+                                     class="img-thumbnail" 
+                                     style="max-height: 200px;">
+                            </div>
+                            {% endif %}
+                            <input type="file" 
+                                   name="image" 
+                                   class="form-control" 
+                                   accept="image/*">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 저장
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Select2 초기화
+$(document).ready(function() {
+    $('select[name="ingredients"]').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+});
+</script>
+{% endblock %} 

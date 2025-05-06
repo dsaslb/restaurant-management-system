@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}직원 추가 - 레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">직원 추가</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('employee.add') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">아이디</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">이메일</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">비밀번호</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">이름</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">연락처</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="position" class="form-label">직책</label>
+                        <select class="form-select" id="position" name="position" required>
+                            <option value="매니저">매니저</option>
+                            <option value="주방장">주방장</option>
+                            <option value="주방보조">주방보조</option>
+                            <option value="서버">서버</option>
+                            <option value="홀보조">홀보조</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="hourly_wage" class="form-label">시급</label>
+                        <input type="number" class="form-control" id="hourly_wage" name="hourly_wage" min="0" step="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">계약 시작일</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">계약 종료일</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                    </div>
+                    <div class="text-end">
+                        <a href="{{ url_for('employee.index') }}" class="btn btn-secondary">취소</a>
+                        <button type="submit" class="btn btn-primary">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 계약 시작일 기본값을 오늘로 설정
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').value = today;
+    
+    // 계약 종료일 기본값을 1년 후로 설정
+    const oneYearLater = new Date();
+    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+    document.getElementById('end_date').value = oneYearLater.toISOString().split('T')[0];
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>근로계약서</title>
+    <style>
+        body { font-family: '나눔고딕', sans-serif; padding: 20px; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        td, th { border: 1px solid #333; padding: 10px; }
+        .signature { margin-top: 40px; }
+        .pdf-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .pdf-button:hover {
+            background-color: #45a049;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .warning-banner {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="button-container">
+        <a href="/contract/{{ user_id }}/pdf" target="_blank" class="pdf-button">
+            📄 계약서 PDF로 저장하기
+        </a>
+    </div>
+
+    <div class="contract-header">
+        <h1>근로계약서</h1>
+        {% if warning %}
+        <div class="warning-banner">
+            {{ warning }}
+        </div>
+        {% endif %}
+    </div>
+
+    <h2>근로계약서</h2>
+    <p>근로기준법 제17조 및 관련 법령에 따라 다음과 같이 근로계약을 체결합니다.</p>
+
+    <table>
+        <tr><th>근로자 성명</th><td>{{name}}</td><th>주민등록번호</th><td>{{rrn}}</td></tr>
+        <tr><th>주소</th><td colspan="3">{{address}}</td></tr>
+        <tr><th>고용형태</th><td>{{pay_type}}제</td><th>시급/월급</th><td>{{wage}}원</td></tr>
+        <tr><th colspan="4">급여 설명</th></tr>
+<tr>
+    <td colspan="4">
+        {% if pay_type == '시급' %}
+            본 계약은 시급제로, 근로자의 실제 근무시간에 따라 급여가 산정됩니다. 주휴수당은 주 15시간 이상, 5일 이상 근무 시 발생합니다.
+        {% elif pay_type == '월급' %}
+            본 계약은 월급제로, 고정된 급여가 매월 지급되며 연차·주휴수당은 별도로 정산됩니다.
+        {% elif pay_type == '주급' %}
+            본 계약은 주급제로, 매주 근무한 시간과 일정에 따라 주단위로 급여가 지급됩니다.
+        {% else %}
+            근무 형태 정보가 누락되었습니다.
+        {% endif %}
+    </td>
+</tr>
+        <tr><th>근로개시일</th><td>{{start_date}}</td><th>계약기간</th><td>{{contract_term}}</td></tr>
+        <tr><th>근로시간</th><td>{{work_time}}</td><th>휴게시간</th><td>{{break_time}}</td></tr>
+        <tr><th>근무요일</th><td colspan="3">{{work_days}}</td></tr>
+        <tr><th>지급일</th><td>{{pay_day}}</td><th>지급방법</th><td>{{pay_method}}</td></tr>
+        <tr><th>연차/주휴수당</th><td colspan="3">
+            {{pay_type}}제에 따라 주휴수당{{holiday_note}} 및 연차수당{{annual_note}}이 발생할 수 있습니다.
+        </td></tr>
+    </table>
+
+    <div class="signature-section">
+        <div class="employee-signature">
+            <h3>직원 서명</h3>
+            {% if employee_signature %}
+                <img src="{{ employee_signature }}" height="100">
+            {% else %}
+                <canvas id="employeeCanvas" width="300" height="100" style="border:1px solid #000;"></canvas>
+                <button onclick="saveSignature('employee')">서명 저장</button>
+            {% endif %}
+        </div>
+        
+        <div class="employer-signature">
+            <h3>고용주 서명</h3>
+            {% if employer_signature %}
+                <img src="{{ employer_signature }}" height="100">
+            {% else %}
+                <canvas id="employerCanvas" width="300" height="100" style="border:1px solid #000;"></canvas>
+                <button onclick="saveSignature('employer')">서명 저장</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="download-section" style="margin-top: 20px; text-align: center;">
+        <a href="/contract/{{ user_id }}/pdf" class="download-button" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">
+            PDF 다운로드
+        </a>
+    </div>
+
+    <script>
+    function enableCanvasSave(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        let drawing = false;
+        const ctx = canvas.getContext("2d");
+
+        canvas.addEventListener("mousedown", () => {
+            drawing = true;
+            ctx.beginPath();
+        });
+        canvas.addEventListener("mouseup", () => drawing = false);
+        canvas.addEventListener("mousemove", (e) => {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        });
+    }
+
+    enableCanvasSave("employeeCanvas");
+    enableCanvasSave("employerCanvas");
+
+    function saveSignature(who) {
+        const canvas = document.getElementById(who + "Canvas");
+        const dataURL = canvas.toDataURL("image/png");
+
+        fetch("/save_signature", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                "image_data": dataURL,
+                "who": who,
+                "user_id": "{{ user_id }}"
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();  // 저장 후 페이지 새로고침
+        });
+    }
+    </script>
+</body>
+</html> 
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>근로계약서</title>
+</head>
+<body style="font-family: Arial, sans-serif; padding: 30px;">
+  <h2>근로계약서</h2>
+  <p>성명: {{ user.name }}</p>
+  <p>생년월일: {{ user.birth_date }}</p>
+  <p>전화번호: {{ user.phone }}</p>
+  <p>계약기간: {{ contract.start_date }} ~ {{ contract.end_date }}</p>
+  <p>임금: {{ contract.wage }}원 / {{ contract.pay_type }}</p>
+
+  <hr>
+  <p>전자 서명:</p>
+  {% if contract.signature %}
+    <img src="{{ url_for('static', filename='signatures/' + contract.signature) }}" width="200">
+  {% else %}
+    <form method="POST" enctype="multipart/form-data">
+      <input type="file" name="signature" accept="image/*" required>
+      <button type="submit">서명 제출</button>
+    </form>
+  {% endif %}
+</body>
+</html>

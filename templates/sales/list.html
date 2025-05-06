@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📋 판매 내역</h2>
+        <a href="{{ url_for('sales.sales_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 판매 등록
+        </a>
+    </div>
+
+    <!-- 필터 섹션 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">메뉴</label>
+                    <select name="menu_id" class="form-select">
+                        <option value="">전체</option>
+                        {% for menu in menus %}
+                        <option value="{{ menu.id }}" 
+                                {% if menu.id == current_menu_id %}selected{% endif %}>
+                            {{ menu.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">시작일</label>
+                    <input type="date" 
+                           name="start_date" 
+                           class="form-control" 
+                           value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">종료일</label>
+                    <input type="date" 
+                           name="end_date" 
+                           class="form-control" 
+                           value="{{ end_date }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> 검색
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 판매 내역 테이블 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>일시</th>
+                            <th>메뉴</th>
+                            <th>수량</th>
+                            <th>금액</th>
+                            <th>메모</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records.items %}
+                        <tr>
+                            <td>{{ record.sold_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ record.menu.name }}</td>
+                            <td>{{ record.quantity }}개</td>
+                            <td>{{ record.total_price|number_format }}원</td>
+                            <td>{{ record.notes }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">판매 내역이 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 페이지네이션 -->
+            {% if records.pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% for page in records.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {% if page == records.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('sales.sales_list', page=page) }}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

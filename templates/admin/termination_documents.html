@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}퇴직/해고/계약해지 문서 관리{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2>📄 퇴직/해고/계약해지 문서 관리</h2>
+    
+    <!-- 문서 작성 폼 -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">새 문서 작성</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="form-group">
+                            <label>직원 선택</label>
+                            <select name="employee_id" class="form-control" required>
+                                <option value="">직원을 선택하세요</option>
+                                {% for employee in employees %}
+                                <option value="{{ employee.id }}">{{ employee.user.name }} ({{ employee.position }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>문서 종류</label>
+                            <select name="document_type" class="form-control" required>
+                                <option value="resignation">퇴직서</option>
+                                <option value="dismissal">해고 통지서</option>
+                                <option value="mutual_termination">계약 해지 계약서</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>사유</label>
+                            <textarea name="reason" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>효력 발생일</label>
+                            <input type="date" name="effective_date" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">문서 생성</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 문서 목록 -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">문서 목록</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>직원명</th>
+                                    <th>문서 종류</th>
+                                    <th>효력 발생일</th>
+                                    <th>생성일</th>
+                                    <th>서명 상태</th>
+                                    <th>문서</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td>{{ doc.employee.user.name }}</td>
+                                    <td>
+                                        {% if doc.document_type == 'resignation' %}
+                                            퇴직서
+                                        {% elif doc.document_type == 'dismissal' %}
+                                            해고 통지서
+                                        {% else %}
+                                            계약 해지 계약서
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ doc.effective_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ doc.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        {% if doc.signed_by_admin and doc.signed_by_employee %}
+                                            <span class="badge badge-success">서명 완료</span>
+                                        {% elif doc.signed_by_admin %}
+                                            <span class="badge badge-warning">직원 서명 대기</span>
+                                        {% elif doc.signed_by_employee %}
+                                            <span class="badge badge-warning">관리자 서명 대기</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">미서명</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if doc.pdf_path %}
+                                            <a href="/{{ doc.pdf_path }}" target="_blank" class="btn btn-sm btn-info">
+                                                열기
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">없음</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if not doc.signed_by_admin %}
+                                            <form method="POST" action="{{ url_for('admin.sign_termination_document', doc_id=doc.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    서명
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

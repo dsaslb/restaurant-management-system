@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📊 재료 사용 통계</h2>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> 엑셀 다운로드
+            </button>
+        </div>
+    </div>
+
+    <!-- 필터 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">기간</label>
+                    <select name="period" class="form-select" onchange="this.form.submit()">
+                        <option value="week" {% if period == 'week' %}selected{% endif %}>주간</option>
+                        <option value="month" {% if period == 'month' %}selected{% endif %}>월간</option>
+                        <option value="year" {% if period == 'year' %}selected{% endif %}>연간</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">카테고리</label>
+                    <select name="category" class="form-select" onchange="this.form.submit()">
+                        <option value="">전체</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" 
+                                {% if category == current_category %}selected{% endif %}>
+                            {{ category }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 통계 요약 -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">총 사용량</h5>
+                    <h3 class="card-text">{{ total_usage|number_format }} {{ unit }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">평균 사용량</h5>
+                    <h3 class="card-text">{{ avg_usage|number_format }} {{ unit }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">최대 사용량</h5>
+                    <h3 class="card-text">{{ max_usage|number_format }} {{ unit }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사용량 차트 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <canvas id="usageChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 상세 사용량 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th>사용량</th>
+                            <th>비율</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in usage_records %}
+                        <tr>
+                            <td>{{ record.date }}</td>
+                            <td>{{ record.usage|number_format }} {{ unit }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" 
+                                         role="progressbar" 
+                                         style="width: 0%;" 
+                                         data-width="{{ record.percentage }}"
+                                         aria-valuenow="{{ record.percentage }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ record.percentage }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Progress bar 초기화
+    document.querySelectorAll('.progress-bar').forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+
+    // 차트 데이터
+    const ctx = document.getElementById('usageChart').getContext('2d');
+    const chartData = {
+        dates: {{ dates|tojson }},
+        usages: {{ usages|tojson }}
+    };
+    
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.dates,
+            datasets: [{
+                label: '사용량',
+                data: chartData.usages,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '재료 사용량 추이'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '사용량 ({{ unit }})'
+                    }
+                }
+            }
+        }
+    });
+});
+
+// 엑셀 다운로드
+function exportToExcel() {
+    const table = document.querySelector('table');
+    const wb = XLSX.utils.table_to_book(table, {sheet: "사용량 통계"});
+    XLSX.writeFile(wb, "재료_사용량_통계.xlsx");
+}
+</script>
+{% endblock %} 

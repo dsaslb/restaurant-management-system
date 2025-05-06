@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🤖 AI 분석 리포트</h2>
+        <a href="{{ url_for('report.report_view') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 돌아가기
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">분석 기간</h5>
+            <p class="card-text">{{ year }}년 {{ month }}월</p>
+        </div>
+    </div>
+
+    <!-- 판매 현황 요약 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-chart-line text-primary"></i> 판매 현황 요약
+            </h5>
+            <div class="mt-3">
+                {{ analysis.summary|nl2br|safe }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 개선이 필요한 부분 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-exclamation-circle text-warning"></i> 개선이 필요한 부분
+            </h5>
+            <div class="mt-3">
+                {{ analysis.improvements|nl2br|safe }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 추천사항 -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-lightbulb text-success"></i> 추천사항
+            </h5>
+            <div class="mt-3">
+                {{ analysis.recommendations|nl2br|safe }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

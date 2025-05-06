@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>새 계약 생성 - {{ user.name }}</title>
+    <style>
+        body {
+            font-family: '나눔고딕', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            margin-left: 10px;
+        }
+        .flash {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .previous-contract {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ user.name }}님의 새 계약 생성</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if last_contract %}
+        <div class="previous-contract">
+            <h3>이전 계약 정보</h3>
+            <p>계약 시작일: {{ last_contract.start_date.strftime('%Y-%m-%d') }}</p>
+            <p>계약 종료일: {{ last_contract.end_date.strftime('%Y-%m-%d') if last_contract.end_date else '무기한' }}</p>
+            <p>급여 유형: {{ last_contract.pay_type }}</p>
+            <p>급여: {{ "{:,}".format(last_contract.wage) }}원</p>
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label for="start_date">계약 시작일</label>
+                <input type="date" id="start_date" name="start_date" required
+                       value="{{ last_contract.end_date.strftime('%Y-%m-%d') if last_contract and last_contract.end_date else '' }}">
+            </div>
+
+            <div class="form-group">
+                <label for="end_date">계약 종료일 (무기계약시 비워두세요)</label>
+                <input type="date" id="end_date" name="end_date">
+            </div>
+
+            <div class="form-group">
+                <label for="pay_type">급여 유형</label>
+                <select id="pay_type" name="pay_type" required>
+                    <option value="시급" {% if last_contract and last_contract.pay_type == '시급' %}selected{% endif %}>시급</option>
+                    <option value="월급" {% if last_contract and last_contract.pay_type == '월급' %}selected{% endif %}>월급</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="wage">급여</label>
+                <input type="number" id="wage" name="wage" required min="0"
+                       value="{{ last_contract.wage if last_contract else '' }}">
+            </div>
+
+            <div style="text-align: center;">
+                <button type="submit" class="btn btn-primary">계약 생성</button>
+                <a href="{{ url_for('view_contract', user_id=user.id) }}" class="btn btn-secondary">취소</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // 시작일이 종료일보다 늦을 수 없음
+        document.getElementById('start_date').addEventListener('change', function() {
+            document.getElementById('end_date').min = this.value;
+        });
+
+        // 종료일이 시작일보다 빠를 수 없음
+        document.getElementById('end_date').addEventListener('change', function() {
+            document.getElementById('start_date').max = this.value;
+        });
+    </script>
+</body>
+</html> 

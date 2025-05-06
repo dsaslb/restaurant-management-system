@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}근로 계약서{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">근로 계약서</h2>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>근로자 정보</h5>
+                    <table class="table">
+                        <tr>
+                            <th>이름</th>
+                            <td>{{ employee.user.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>직책</th>
+                            <td>{{ employee.position }}</td>
+                        </tr>
+                        <tr>
+                            <th>연락처</th>
+                            <td>{{ employee.user.phone }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>계약 정보</h5>
+                    <table class="table">
+                        <tr>
+                            <th>계약 기간</th>
+                            <td>{{ contract.start_date.strftime('%Y-%m-%d') }} ~ {{ contract.end_date.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        <tr>
+                            <th>급여 형태</th>
+                            <td>{{ contract.pay_type }}</td>
+                        </tr>
+                        <tr>
+                            <th>급여</th>
+                            <td>{{ "{:,}".format(contract.wage) }} 원</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h5>근로 조건</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            <p>1. 근무 시간: 매일 9시간 (휴게시간 1시간 포함)</p>
+                            <p>2. 주휴일: 매주 일요일</p>
+                            <p>3. 연차: 근속 1년 미만 1개월 개근시 1일, 1년 이상 80% 출근시 15일</p>
+                            <p>4. 사회보험: 4대보험 가입</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if contract.signed %}
+                <div class="alert alert-success">
+                    <h5>✅ 서명 완료</h5>
+                    <p>서명일시: {{ contract.signed_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    {% if contract.pdf_path %}
+                        <a href="{{ url_for('static', filename=contract.pdf_path) }}" class="btn btn-primary" target="_blank">
+                            PDF 다운로드
+                        </a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <h5>⚠️ 서명 필요</h5>
+                    <p>아래 버튼을 클릭하여 계약서에 서명해주세요.</p>
+                    <form method="POST" class="mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            서명하기
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

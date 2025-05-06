@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>근무시간 불일치 경고</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f7fa;
+            padding: 40px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #d9534f;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .ok-message {
+            text-align: center;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 20px;
+            border-radius: 8px;
+            color: #155724;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #dc3545;
+            color: white;
+            font-size: 12px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>⚠ 근무시간 불일치 경고</h2>
+
+        {% if mismatches %}
+            <ul>
+            {% for m in mismatches %}
+                <li>
+                    <strong>📅 {{ m.date }} - 직원 ID: {{ m.user_id }}</strong><br>
+                    출근 차이: {{ m.start_diff }}분
+                    {% if m.start_diff > 30 %}<span class="badge">지각</span>{% endif %}<br>
+                    퇴근 차이: {{ m.end_diff }}분
+                    {% if m.end_diff > 30 %}<span class="badge">조기 퇴근</span>{% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <div class="ok-message">
+                ✅ 모든 직원이 정확히 근무했습니다. 문제가 없습니다 😊
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

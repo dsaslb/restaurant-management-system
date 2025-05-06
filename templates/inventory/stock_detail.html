@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📦 재고 상세</h2>
+        <div>
+            <a href="{{ url_for('inventory.stock_list') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 목록으로
+            </a>
+            <button type="button" 
+                    class="btn btn-warning"
+                    data-bs-toggle="modal"
+                    data-bs-target="#adjustModal">
+                <i class="fas fa-edit"></i> 재고 조정
+            </button>
+            <button type="button" 
+                    class="btn btn-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deductModal">
+                <i class="fas fa-minus"></i> 재고 차감
+            </button>
+        </div>
+    </div>
+
+    <!-- 재고 정보 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title">기본 정보</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 150px;">품목명</th>
+                            <td>{{ ingredient.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>카테고리</th>
+                            <td>{{ ingredient.category }}</td>
+                        </tr>
+                        <tr>
+                            <th>단위</th>
+                            <td>{{ ingredient.unit }}</td>
+                        </tr>
+                        <tr>
+                            <th>공급업체</th>
+                            <td>{{ ingredient.supplier }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="card-title">재고 정보</h5>
+                    <table class="table">
+                        <tr>
+                            <th style="width: 150px;">현재 재고</th>
+                            <td>
+                                {{ ingredient.current_stock }} {{ ingredient.unit }}
+                                {% if ingredient.current_stock <= ingredient.min_stock %}
+                                <span class="badge bg-danger">재고 부족</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>최소 재고</th>
+                            <td>{{ ingredient.min_stock }} {{ ingredient.unit }}</td>
+                        </tr>
+                        <tr>
+                            <th>단가</th>
+                            <td>{{ "₩{:,.0f}".format(ingredient.cost_per_unit) }}</td>
+                        </tr>
+                        <tr>
+                            <th>재고 가치</th>
+                            <td>{{ "₩{:,.0f}".format(ingredient.current_stock * ingredient.cost_per_unit) }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 거래 내역 -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">거래 내역</h5>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>일시</th>
+                            <th>유형</th>
+                            <th>수량</th>
+                            <th>처리자</th>
+                            <th>비고</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in transactions %}
+                        <tr>
+                            <td>{{ trans.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if trans.transaction_type == 'purchase' %}
+                                <span class="badge bg-success">입고</span>
+                                {% elif trans.transaction_type == 'usage' %}
+                                <span class="badge bg-danger">출고</span>
+                                {% else %}
+                                <span class="badge bg-warning">조정</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if trans.quantity > 0 %}
+                                <span class="text-success">+{{ trans.quantity }}</span>
+                                {% else %}
+                                <span class="text-danger">{{ trans.quantity }}</span>
+                                {% endif %}
+                                {{ ingredient.unit }}
+                            </td>
+                            <td>{{ trans.creator.name }}</td>
+                            <td>{{ trans.notes }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">거래 내역이 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 재고 조정 모달 -->
+<div class="modal fade" id="adjustModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">재고 수량 조정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('inventory.adjust_stock', ingredient_id=ingredient.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">현재 재고</label>
+                        <input type="text" class="form-control" value="{{ ingredient.current_stock }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">조정 수량</label>
+                        <input type="number" name="quantity" class="form-control" step="0.01" required>
+                        <small class="text-muted">양수: 입고, 음수: 출고</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">비고</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 재고 차감 모달 -->
+<div class="modal fade" id="deductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">재고 차감</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('inventory.deduct_stock', ingredient_id=ingredient.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">현재 재고</label>
+                        <input type="text" class="form-control" value="{{ ingredient.current_stock }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">차감 수량</label>
+                        <input type="number" name="quantity" class="form-control" step="0.01" required min="0.01" max="{{ ingredient.current_stock }}">
+                        <small class="text-muted">최대 {{ ingredient.current_stock }} {{ ingredient.unit }}까지 차감 가능</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">비고</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="차감 사유를 입력하세요"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-danger">차감</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

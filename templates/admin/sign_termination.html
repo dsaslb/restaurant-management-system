@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}문서 서명{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2>📄 문서 서명</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">문서 정보</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>직원명</label>
+                        <input type="text" class="form-control" value="{{ document.employee.user.name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>문서 종류</label>
+                        <input type="text" class="form-control" value="
+                            {% if document.document_type == 'resignation' %}
+                                퇴직서
+                            {% elif document.document_type == 'dismissal' %}
+                                해고 통지서
+                            {% else %}
+                                계약 해지 계약서
+                            {% endif %}
+                        " readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>사유</label>
+                        <textarea class="form-control" rows="5" readonly>{{ document.reason }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>효력 발생일</label>
+                        <input type="text" class="form-control" value="{{ document.effective_date.strftime('%Y-%m-%d') }}" readonly>
+                    </div>
+                    
+                    {% if document.pdf_path %}
+                    <div class="form-group">
+                        <a href="/{{ document.pdf_path }}" target="_blank" class="btn btn-info">
+                            PDF 문서 보기
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST">
+                        <button type="submit" class="btn btn-primary">서명하기</button>
+                        <a href="{{ url_for('admin.termination_documents') }}" class="btn btn-secondary">취소</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">서명 상태</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <strong>직원 서명:</strong>
+                        {% if document.signed_by_employee %}
+                            <span class="badge badge-success">완료</span>
+                            ({{ document.employee_signed_at.strftime('%Y-%m-%d %H:%M') }})
+                        {% else %}
+                            <span class="badge badge-warning">대기중</span>
+                        {% endif %}
+                    </p>
+                    <p>
+                        <strong>관리자 서명:</strong>
+                        {% if document.signed_by_admin %}
+                            <span class="badge badge-success">완료</span>
+                            ({{ document.admin_signed_at.strftime('%Y-%m-%d %H:%M') }})
+                        {% else %}
+                            <span class="badge badge-warning">대기중</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

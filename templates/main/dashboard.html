@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}대시보드 - 레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <h2>대시보드</h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 재고 현황 -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">재고 현황</h5>
+                <p class="card-text display-6">{{ low_stock_count }}</p>
+                <p class="text-muted">부족한 재고 항목</p>
+                <a href="{{ url_for('inventory.low_stock') }}" class="btn btn-sm btn-primary">자세히 보기</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 직원 현황 -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">직원 현황</h5>
+                <p class="card-text display-6">{{ employee_count }}</p>
+                <p class="text-muted">전체 직원 수</p>
+                <a href="{{ url_for('employee.index') }}" class="btn btn-sm btn-primary">자세히 보기</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 오늘의 근무 -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">오늘의 근무</h5>
+                <p class="card-text display-6">{{ today_schedule_count }}</p>
+                <p class="text-muted">근무 예정 직원</p>
+                <a href="{{ url_for('schedule.index') }}" class="btn btn-sm btn-primary">자세히 보기</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">알림</h5>
+                <p class="card-text display-6">{{ notification_count }}</p>
+                <p class="text-muted">새로운 알림</p>
+                <a href="{{ url_for('notification.index') }}" class="btn btn-sm btn-primary">자세히 보기</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 최근 재고 변동 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">최근 재고 변동</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>품목</th>
+                                <th>변동량</th>
+                                <th>날짜</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in recent_transactions %}
+                            <tr>
+                                <td>{{ transaction.ingredient.name }}</td>
+                                <td>{{ transaction.quantity }} {{ transaction.ingredient.unit }}</td>
+                                <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-3">
+                    <a href="{{ url_for('inventory.history') }}" class="btn btn-sm btn-primary">전체 내역 보기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 오늘의 근무 일정 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">오늘의 근무 일정</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>직원</th>
+                                <th>시작 시간</th>
+                                <th>종료 시간</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for schedule in today_schedules %}
+                            <tr>
+                                <td>{{ schedule.user.name }}</td>
+                                <td>{{ schedule.start_time.strftime('%H:%M') }}</td>
+                                <td>{{ schedule.end_time.strftime('%H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-3">
+                    <a href="{{ url_for('schedule.index') }}" class="btn btn-sm btn-primary">전체 일정 보기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

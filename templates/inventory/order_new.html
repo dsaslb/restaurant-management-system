@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🛒 발주 등록</h2>
+        <a href="{{ url_for('inventory.order_list') }}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> 발주 목록
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" class="needs-validation" novalidate>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">식자재 선택</label>
+                        <select name="ingredient_id" class="form-select" required>
+                            <option value="">식자재를 선택하세요</option>
+                            {% for ing in ingredients %}
+                            <option value="{{ ing.id }}">
+                                {{ ing.name }} ({{ ing.unit }}) - 현재 재고: {{ ing.current_stock }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">
+                            식자재를 선택해주세요
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">수량</label>
+                        <div class="input-group">
+                            <input type="number" 
+                                   name="quantity" 
+                                   class="form-control" 
+                                   step="0.01" 
+                                   min="0.01" 
+                                   required>
+                            <span class="input-group-text">단위</span>
+                        </div>
+                        <div class="invalid-feedback">
+                            수량을 입력해주세요
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">단가 (원)</label>
+                        <div class="input-group">
+                            <input type="number" 
+                                   name="cost_per_unit" 
+                                   class="form-control" 
+                                   min="0" 
+                                   required>
+                            <span class="input-group-text">원</span>
+                        </div>
+                        <div class="invalid-feedback">
+                            단가를 입력해주세요
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 발주 등록
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// 폼 유효성 검사
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}
+{% endblock %} 

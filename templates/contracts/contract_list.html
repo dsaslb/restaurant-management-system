@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}계약서 관리{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2>📄 계약 목록</h2>
+    
+    <!-- 검색 폼 -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form method="GET" class="form-inline">
+                <div class="form-group mx-sm-3">
+                    <input type="text" name="search" class="form-control" placeholder="직원명 검색" value="{{ search }}">
+                </div>
+                <button type="submit" class="btn btn-primary">검색</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 계약 목록 -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>직원명</th>
+                                    <th>직책</th>
+                                    <th>계약 시작일</th>
+                                    <th>계약 종료일</th>
+                                    <th>급여 유형</th>
+                                    <th>급여</th>
+                                    <th>서명 여부</th>
+                                    <th>계약서</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contract in contracts %}
+                                <tr>
+                                    <td>{{ contract.employee.user.name }}</td>
+                                    <td>{{ contract.employee.position }}</td>
+                                    <td>{{ contract.start_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ contract.end_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ contract.pay_type }}</td>
+                                    <td>{{ "{:,}".format(contract.wage) }}원</td>
+                                    <td>
+                                        {% if contract.signed %}
+                                            <span class="badge badge-success">서명완료</span>
+                                        {% else %}
+                                            <span class="badge badge-warning">미서명</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if contract.pdf_path %}
+                                            <a href="/{{ contract.pdf_path }}" target="_blank" class="btn btn-sm btn-info">
+                                                열기
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">없음</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if contract.end_date <= now + timedelta(days=7) %}
+                                            <form method="POST" action="{{ url_for('contract.renew_contract', contract_id=contract.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    갱신
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 계약서 수정 모달 -->
+<div class="modal fade" id="editContractModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">계약서 수정</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editContractForm">
+                    <input type="hidden" id="contractId">
+                    <div class="form-group">
+                        <label>계약 시작일</label>
+                        <input type="date" class="form-control" id="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>계약 종료일</label>
+                        <input type="date" class="form-control" id="endDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>급여 형태</label>
+                        <select class="form-control" id="payType" required>
+                            <option value="시급제">시급제</option>
+                            <option value="월급제">월급제</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>급여</label>
+                        <input type="number" class="form-control" id="wage" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="saveContractBtn">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+const perPage = 10;
+
+// 계약서 목록 로드
+function loadContracts(page = 1) {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    fetch(`/api/contracts?page=${page}&per_page=${perPage}&search=${search}&status=${status}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                renderContracts(data.data.contracts);
+                renderPagination(data.data);
+            } else {
+                showError(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('계약서 목록을 불러오는 중 오류가 발생했습니다.');
+        });
+}
+
+// 계약서 목록 렌더링
+function renderContracts(contracts) {
+    const tbody = document.getElementById('contractList');
+    tbody.innerHTML = '';
+    
+    contracts.forEach(contract => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${contract.employee_name}</td>
+            <td>${contract.position}</td>
+            <td>${contract.start_date} ~ ${contract.end_date}</td>
+            <td>${contract.pay_type} ${contract.wage.toLocaleString()}원</td>
+            <td>
+                <span class="badge badge-${getStatusBadgeClass(contract)}">
+                    ${getStatusText(contract)}
+                </span>
+            </td>
+            <td>${contract.signed_at || '-'}</td>
+            <td>
+                <div class="btn-group">
+                    <a href="/contract/${contract.employee_id}" class="btn btn-sm btn-info">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <button class="btn btn-sm btn-primary" onclick="editContract(${JSON.stringify(contract).replace(/"/g, '&quot;')})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// 페이지네이션 렌더링
+function renderPagination(data) {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    
+    // 이전 페이지 버튼
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${data.current_page === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `
+        <a class="page-link" href="#" onclick="loadContracts(${data.current_page - 1})">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+    `;
+    pagination.appendChild(prevLi);
+    
+    // 페이지 번호
+    for (let i = 1; i <= data.pages; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === data.current_page ? 'active' : ''}`;
+        li.innerHTML = `
+            <a class="page-link" href="#" onclick="loadContracts(${i})">${i}</a>
+        `;
+        pagination.appendChild(li);
+    }
+    
+    // 다음 페이지 버튼
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${data.current_page === data.pages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `
+        <a class="page-link" href="#" onclick="loadContracts(${data.current_page + 1})">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    `;
+    pagination.appendChild(nextLi);
+}
+
+// 상태 뱃지 클래스 반환
+function getStatusBadgeClass(contract) {
+    const today = new Date();
+    const endDate = new Date(contract.end_date);
+    
+    if (!contract.signed) return 'warning';
+    if (endDate < today) return 'danger';
+    return 'success';
+}
+
+// 상태 텍스트 반환
+function getStatusText(contract) {
+    const today = new Date();
+    const endDate = new Date(contract.end_date);
+    
+    if (!contract.signed) return '미서명';
+    if (endDate < today) return '만료됨';
+    return '진행중';
+}
+
+// 계약서 수정
+function editContract(contract) {
+    document.getElementById('contractId').value = contract.id;
+    document.getElementById('startDate').value = contract.start_date;
+    document.getElementById('endDate').value = contract.end_date;
+    document.getElementById('payType').value = contract.pay_type;
+    document.getElementById('wage').value = contract.wage;
+    
+    $('#editContractModal').modal('show');
+}
+
+// 계약서 저장
+document.getElementById('saveContractBtn').addEventListener('click', function() {
+    const contractId = document.getElementById('contractId').value;
+    const data = {
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        pay_type: document.getElementById('payType').value,
+        wage: parseInt(document.getElementById('wage').value)
+    };
+    
+    fetch(`/api/contract/${contractId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            $('#editContractModal').modal('hide');
+            loadContracts(currentPage);
+            showSuccess('계약서가 성공적으로 수정되었습니다.');
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('계약서 수정 중 오류가 발생했습니다.');
+    });
+});
+
+// 이벤트 리스너 등록
+document.getElementById('searchBtn').addEventListener('click', () => loadContracts(1));
+document.getElementById('searchInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') loadContracts(1);
+});
+document.getElementById('statusFilter').addEventListener('change', () => loadContracts(1));
+document.getElementById('refreshBtn').addEventListener('click', () => loadContracts(currentPage));
+
+// 초기 로드
+loadContracts();
+</script>
+{% endblock %} 

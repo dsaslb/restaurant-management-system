@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>⏳ 재고 사용 승인</h2>
+        <div>
+            <a href="{{ url_for('inventory.stock_use') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus"></i> 사용 등록
+            </a>
+            <a href="{{ url_for('inventory.stock_list') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 목록으로
+            </a>
+        </div>
+    </div>
+
+    <!-- 필터 섹션 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">상태</label>
+                    <select name="status" class="form-select">
+                        <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>승인 대기</option>
+                        <option value="approved" {% if current_status == 'approved' %}selected{% endif %}>승인됨</option>
+                        <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>거절됨</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">식자재</label>
+                    <select name="ingredient_id" class="form-select">
+                        <option value="">전체</option>
+                        {% for ing in ingredients %}
+                        <option value="{{ ing.id }}" {% if current_ingredient_id == ing.id %}selected{% endif %}>
+                            {{ ing.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> 검색
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 승인 대기 목록 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>날짜</th>
+                            <th>식자재</th>
+                            <th>사용량</th>
+                            <th>요청자</th>
+                            <th>메모</th>
+                            <th>상태</th>
+                            <th>처리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in transactions.items %}
+                        <tr>
+                            <td>{{ trans.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ trans.ingredient.name }}</td>
+                            <td>{{ trans.quantity }} {{ trans.ingredient.unit }}</td>
+                            <td>{{ trans.created_by_user.name }}</td>
+                            <td>{{ trans.notes or '-' }}</td>
+                            <td>
+                                {% if trans.status == 'pending' %}
+                                <span class="badge bg-warning">승인 대기</span>
+                                {% elif trans.status == 'approved' %}
+                                <span class="badge bg-success">승인됨</span>
+                                {% else %}
+                                <span class="badge bg-danger">거절됨</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if trans.status == 'pending' %}
+                                <div class="btn-group">
+                                    <form method="POST" 
+                                          action="{{ url_for('inventory.approve_stock_usage', transaction_id=trans.id) }}"
+                                          class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i> 승인
+                                        </button>
+                                    </form>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger ms-1"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#rejectModal{{ trans.id }}">
+                                        <i class="fas fa-times"></i> 거절
+                                    </button>
+                                </div>
+
+                                <!-- 거절 모달 -->
+                                <div class="modal fade" id="rejectModal{{ trans.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form method="POST" 
+                                                  action="{{ url_for('inventory.reject_stock_usage', transaction_id=trans.id) }}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">재고 사용 거절</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">거절 사유</label>
+                                                        <textarea name="rejection_reason" 
+                                                                  class="form-control" 
+                                                                  rows="3" 
+                                                                  required></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                                    <button type="submit" class="btn btn-danger">거절</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <small class="text-muted">
+                                    {% if trans.status == 'approved' %}
+                                    {{ trans.approved_at.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                    {{ trans.rejection_reason }}
+                                    {% endif %}
+                                </small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">승인 대기 중인 요청이 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 페이지네이션 -->
+            {% if transactions.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% for page in transactions.iter_pages() %}
+                        {% if page %}
+                            <li class="page-item {% if page == transactions.page %}active{% endif %}">
+                                <a class="page-link" 
+                                   href="{{ url_for('inventory.stock_usage_approval_list', 
+                                                   page=page,
+                                                   status=current_status,
+                                                   ingredient_id=current_ingredient_id) }}">
+                                    {{ page }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>근무 스케줄 입력</title>
+</head>
+<body>
+    <h2>📅 근무 스케줄표 (관리자 전용)</h2>
+
+    <form method="POST">
+        <label>직원 ID:
+            <input type="number" name="user_id" required>
+        </label><br>
+
+        <label>날짜:
+            <input type="date" name="date" required>
+        </label><br>
+
+        <label>출근 시간:
+            <input type="time" name="planned_start" required>
+        </label><br>
+
+        <label>퇴근 시간:
+            <input type="time" name="planned_end" required>
+        </label><br>
+
+        <label>휴게 시간 (분):
+            <input type="number" name="break_time" value="30" required>
+        </label><br><br>
+
+        <button type="submit">스케줄 등록</button>
+    </form>
+
+    <br>
+    <form action="/admin/send_schedule_alert" method="POST">
+        <label>날짜 선택:
+            <input type="date" name="date" required>
+        </label>
+        <button type="submit">📤 해당 날짜 스케줄 알림 보내기</button>
+    </form>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>근무 스케줄 캘린더</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+</head>
+<body>
+    <h2>📅 근무 스케줄 캘린더 (관리자용)</h2>
+    <div id="calendar"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const calendarEl = document.getElementById('calendar');
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ko',
+                selectable: true,
+
+                select: function (info) {
+                    const date = info.startStr;
+                    const user_id = prompt("직원 ID 입력:");
+                    const start = prompt("출근 시간 입력 (예: 10:00):");
+                    const end = prompt("퇴근 시간 입력 (예: 18:00):");
+                    const breakTime = prompt("휴게시간 (분):", "30");
+
+                    if (user_id && start && end) {
+                        fetch("/admin/schedule_api", {
+                            method: "POST",
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                user_id: user_id,
+                                date: date,
+                                planned_start: start,
+                                planned_end: end,
+                                break_time: breakTime
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            alert("스케줄 저장 완료!");
+                            calendar.refetchEvents();
+                        });
+                    }
+                },
+
+                events: "/admin/schedule_api"
+            });
+
+            calendar.render();
+        });
+    </script>
+</body>
+</html>

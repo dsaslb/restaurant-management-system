@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}계약 통계{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2>📊 계약 통계</h2>
+    
+    <!-- 기본 통계 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">총 계약서</h5>
+                    <h2 class="card-text">{{ total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">갱신된 계약</h5>
+                    <h2 class="card-text">{{ renewed }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">만료된 계약</h5>
+                    <h2 class="card-text">{{ expired }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">현재 유효 계약</h5>
+                    <h2 class="card-text">{{ active }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 최근 갱신된 계약 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">최근 갱신된 계약</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>직원명</th>
+                                    <th>갱신일</th>
+                                    <th>계약 기간</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contract in recent_renewals %}
+                                <tr>
+                                    <td>{{ contract.employee.user.name }}</td>
+                                    <td>{{ contract.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ contract.start_date.strftime('%Y-%m-%d') }} ~ {{ contract.end_date.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 만료 임박 계약 -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">만료 임박 계약</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>직원명</th>
+                                    <th>만료일</th>
+                                    <th>남은 기간</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contract in expiring_soon %}
+                                <tr>
+                                    <td>{{ contract.employee.user.name }}</td>
+                                    <td>{{ contract.end_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ (contract.end_date - now).days }}일</td>
+                                    <td>
+                                        <form method="POST" action="{{ url_for('contract.renew_contract', contract_id=contract.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                갱신
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

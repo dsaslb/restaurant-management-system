@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>근무 스케줄 분석</title>
+</head>
+<body>
+    <h2>📊 시간대별 근무 분석 리포트</h2>
+    <table border="1">
+        <tr><th>시간대</th><th>근무 인원</th><th>평균 평가</th><th>분석 의견</th></tr>
+        {% for r in result %}
+        <tr>
+            <td>{{ r.시간대 }}</td>
+            <td>{{ r.근무 인원 }}</td>
+            <td>{{ r.평균 평점 or "N/A" }}</td>
+            <td>{{ r.의견 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

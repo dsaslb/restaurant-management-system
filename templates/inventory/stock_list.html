@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📦 재고 관리</h2>
+        <a href="{{ url_for('inventory.order_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 새 발주 등록
+        </a>
+    </div>
+    
+    <!-- 검색 필터 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="품목명 검색"
+                           value="{{ search }}">
+                </div>
+                <div class="col-md-4">
+                    <select name="category" class="form-select">
+                        <option value="">카테고리 전체</option>
+                        <option value="식재료" {% if category == '식재료' %}selected{% endif %}>식재료</option>
+                        <option value="조미료" {% if category == '조미료' %}selected{% endif %}>조미료</option>
+                        <option value="기타" {% if category == '기타' %}selected{% endif %}>기타</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">검색</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ url_for('inventory.stock_list') }}" class="btn btn-secondary w-100">초기화</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 재고 목록 -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>품목명</th>
+                    <th>카테고리</th>
+                    <th>단위</th>
+                    <th>현재 재고</th>
+                    <th>최소 재고</th>
+                    <th>단가</th>
+                    <th>공급업체</th>
+                    <th>상태</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ing in ingredients %}
+                <tr>
+                    <td>{{ ing.name }}</td>
+                    <td>{{ ing.category }}</td>
+                    <td>{{ ing.unit }}</td>
+                    <td>{{ ing.current_stock }}</td>
+                    <td>{{ ing.min_stock }}</td>
+                    <td>{{ "₩{:,.0f}".format(ing.cost_per_unit) }}</td>
+                    <td>{{ ing.supplier }}</td>
+                    <td>
+                        {% if ing.current_stock <= ing.min_stock %}
+                        <span class="badge bg-danger">재고 부족</span>
+                        {% else %}
+                        <span class="badge bg-success">정상</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('inventory.stock_detail', ingredient_id=ing.id) }}" 
+                               class="btn btn-sm btn-info">
+                                <i class="fas fa-history"></i> 내역
+                            </a>
+                            <button type="button" 
+                                    class="btn btn-sm btn-warning"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#adjustModal{{ ing.id }}">
+                                <i class="fas fa-edit"></i> 조정
+                            </button>
+                        </div>
+                        
+                        <!-- 재고 조정 모달 -->
+                        <div class="modal fade" id="adjustModal{{ ing.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">재고 수량 조정</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form action="{{ url_for('inventory.adjust_stock', ingredient_id=ing.id) }}" method="POST">
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">현재 재고</label>
+                                                <input type="text" class="form-control" value="{{ ing.current_stock }}" readonly>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">조정 수량</label>
+                                                <input type="number" name="quantity" class="form-control" step="0.01" required>
+                                                <small class="text-muted">양수: 입고, 음수: 출고</small>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">비고</label>
+                                                <textarea name="notes" class="form-control" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                                            <button type="submit" class="btn btn-primary">저장</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center">등록된 품목이 없습니다.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

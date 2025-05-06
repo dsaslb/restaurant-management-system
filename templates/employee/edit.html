@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}직원 정보 수정 - 레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">직원 정보 수정</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('employee.edit', id=employee.id) }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">이름</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ employee.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">연락처</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ employee.phone }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="position" class="form-label">직책</label>
+                        <select class="form-select" id="position" name="position" required>
+                            <option value="매니저" {% if employee.position == '매니저' %}selected{% endif %}>매니저</option>
+                            <option value="주방장" {% if employee.position == '주방장' %}selected{% endif %}>주방장</option>
+                            <option value="주방보조" {% if employee.position == '주방보조' %}selected{% endif %}>주방보조</option>
+                            <option value="서버" {% if employee.position == '서버' %}selected{% endif %}>서버</option>
+                            <option value="홀보조" {% if employee.position == '홀보조' %}selected{% endif %}>홀보조</option>
+                        </select>
+                    </div>
+                    {% if employee.current_contract %}
+                    <div class="mb-3">
+                        <label for="hourly_wage" class="form-label">시급</label>
+                        <input type="number" class="form-control" id="hourly_wage" name="hourly_wage" min="0" step="100" value="{{ employee.current_contract.hourly_wage }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">계약 시작일</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ employee.current_contract.start_date.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">계약 종료일</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ employee.current_contract.end_date.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    {% endif %}
+                    <div class="text-end">
+                        <a href="{{ url_for('employee.index') }}" class="btn btn-secondary">취소</a>
+                        <button type="submit" class="btn btn-primary">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

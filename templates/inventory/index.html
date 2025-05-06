@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}재고 관리 - 레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>재고 관리</h2>
+    </div>
+    <div class="col text-end">
+        <a href="{{ url_for('inventory.add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> 재고 항목 추가
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">재고 목록</h5>
+                <div>
+                    <a href="{{ url_for('inventory.low_stock') }}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-exclamation-triangle"></i> 부족 재고
+                    </a>
+                    <a href="{{ url_for('inventory.history') }}" class="btn btn-info btn-sm">
+                        <i class="bi bi-clock-history"></i> 변동 내역
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>품목명</th>
+                                <th>현재 수량</th>
+                                <th>단위</th>
+                                <th>최소 수량</th>
+                                <th>상태</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ingredient in ingredients %}
+                            {% set stock_item = ingredient.stock_item %}
+                            {% set current_quantity = stock_item.quantity if stock_item else 0 %}
+                            <tr>
+                                <td>{{ ingredient.name }}</td>
+                                <td>{{ current_quantity }}</td>
+                                <td>{{ ingredient.unit }}</td>
+                                <td>{{ ingredient.min_quantity }}</td>
+                                <td>
+                                    {% if current_quantity <= ingredient.min_quantity %}
+                                    <span class="badge bg-danger">부족</span>
+                                    {% else %}
+                                    <span class="badge bg-success">정상</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="showTransactionModal({{ ingredient.id }})">
+                                        <i class="bi bi-arrow-left-right"></i> 입출고
+                                    </button>
+                                    <a href="{{ url_for('inventory.edit', id=ingredient.id) }}" class="btn btn-sm btn-secondary">
+                                        <i class="bi bi-pencil"></i> 수정
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 입출고 모달 -->
+<div class="modal fade" id="transactionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">재고 입출고</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="transactionForm">
+                    <input type="hidden" id="ingredient_id" name="ingredient_id">
+                    <div class="mb-3">
+                        <label class="form-label">입출고 유형</label>
+                        <select class="form-select" name="transaction_type" required>
+                            <option value="입고">입고</option>
+                            <option value="출고">출고</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">수량</label>
+                        <input type="number" class="form-control" name="quantity" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">비고</label>
+                        <input type="text" class="form-control" name="note">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitTransaction()">확인</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let transactionModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    transactionModal = new bootstrap.Modal(document.getElementById('transactionModal'));
+});
+
+function showTransactionModal(ingredientId) {
+    document.getElementById('ingredient_id').value = ingredientId;
+    transactionModal.show();
+}
+
+function submitTransaction() {
+    const form = document.getElementById('transactionForm');
+    const formData = new FormData(form);
+    
+    fetch('{{ url_for("inventory.transaction") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            transactionModal.hide();
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('재고 변동 처리 중 오류가 발생했습니다.');
+    });
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>실근무 기록</title></head>
+<body>
+<h2>실근무 기록</h2>
+<table border="1">
+  <tr>
+    <th>직원</th><th>날짜</th><th>스케줄</th><th>실제</th><th>근무시간</th><th>급여</th>
+  </tr>
+  {% for log in logs %}
+  <tr>
+    <td>{{ log.user.name }}</td>
+    <td>{{ log.date }}</td>
+    <td>{{ log.scheduled_start }} ~ {{ log.scheduled_end }}</td>
+    <td>{{ log.actual_start }} ~ {{ log.actual_end }}</td>
+    <td>{{ log.total_minutes }}분</td>
+    <td>{{ log.wage_paid }}원</td>
+  </tr>
+  {% endfor %}
+</table>
+</body>
+</html>

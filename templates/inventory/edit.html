@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}재고 항목 수정 - 레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">재고 항목 수정</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('inventory.edit', id=ingredient.id) }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">품목명</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ ingredient.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="unit" class="form-label">단위</label>
+                        <select class="form-select" id="unit" name="unit" required>
+                            <option value="kg" {% if ingredient.unit == 'kg' %}selected{% endif %}>kg</option>
+                            <option value="g" {% if ingredient.unit == 'g' %}selected{% endif %}>g</option>
+                            <option value="L" {% if ingredient.unit == 'L' %}selected{% endif %}>L</option>
+                            <option value="ml" {% if ingredient.unit == 'ml' %}selected{% endif %}>ml</option>
+                            <option value="개" {% if ingredient.unit == '개' %}selected{% endif %}>개</option>
+                            <option value="팩" {% if ingredient.unit == '팩' %}selected{% endif %}>팩</option>
+                            <option value="병" {% if ingredient.unit == '병' %}selected{% endif %}>병</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="min_quantity" class="form-label">최소 수량</label>
+                        <input type="number" class="form-control" id="min_quantity" name="min_quantity" step="0.01" value="{{ ingredient.min_quantity }}" required>
+                    </div>
+                    <div class="text-end">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">취소</a>
+                        <button type="submit" class="btn btn-primary">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}새 퇴직/해고/계약해지 문서 작성{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2>📄 새 퇴직/해고/계약해지 문서 작성</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">문서 정보</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="form-group">
+                            <label>직원 정보</label>
+                            <input type="text" class="form-control" value="{{ employee.user.name }} ({{ employee.position }})" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>문서 종류</label>
+                            <select name="document_type" class="form-control" required>
+                                <option value="resignation">퇴직서</option>
+                                <option value="dismissal">해고 통지서</option>
+                                <option value="mutual_termination">계약 해지 계약서</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>사유</label>
+                            <textarea name="reason" class="form-control" rows="5" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>효력 발생일</label>
+                            <input type="date" name="effective_date" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">문서 생성</button>
+                        <a href="{{ url_for('admin.termination_documents') }}" class="btn btn-secondary">취소</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">직원 정보</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>이름:</strong> {{ employee.user.name }}</p>
+                    <p><strong>직위:</strong> {{ employee.position }}</p>
+                    <p><strong>입사일:</strong> {{ employee.hire_date.strftime('%Y-%m-%d') }}</p>
+                    <p><strong>연락처:</strong> {{ employee.user.phone }}</p>
+                    <p><strong>이메일:</strong> {{ employee.user.email }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}회원가입 - 레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">회원가입</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">사용자 이름</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">이메일</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">비밀번호</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password_confirm" class="form-label">비밀번호 확인</label>
+                        <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">회원가입</button>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">이미 계정이 있으신가요? <a href="{{ url_for('auth.login') }}">로그인</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}부족 재고 목록 - 레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>부족 재고 목록</h2>
+    </div>
+    <div class="col text-end">
+        <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> 재고 목록으로
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                {% if low_stock_items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>품목명</th>
+                                <th>현재 수량</th>
+                                <th>최소 수량</th>
+                                <th>단위</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in low_stock_items %}
+                            <tr>
+                                <td>{{ item.ingredient.name }}</td>
+                                <td>{{ item.current_quantity }}</td>
+                                <td>{{ item.ingredient.min_quantity }}</td>
+                                <td>{{ item.ingredient.unit }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="showTransactionModal({{ item.ingredient.id }})">
+                                        <i class="bi bi-arrow-left-right"></i> 입고
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">부족한 재고가 없습니다</h4>
+                    <p class="text-muted">모든 재고가 최소 수량 이상입니다.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 입출고 모달 -->
+<div class="modal fade" id="transactionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">재고 입고</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="transactionForm">
+                    <input type="hidden" id="ingredient_id" name="ingredient_id">
+                    <input type="hidden" name="transaction_type" value="입고">
+                    <div class="mb-3">
+                        <label class="form-label">수량</label>
+                        <input type="number" class="form-control" name="quantity" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">비고</label>
+                        <input type="text" class="form-control" name="note" value="부족 재고 보충">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="submitTransaction()">확인</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let transactionModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    transactionModal = new bootstrap.Modal(document.getElementById('transactionModal'));
+});
+
+function showTransactionModal(ingredientId) {
+    document.getElementById('ingredient_id').value = ingredientId;
+    transactionModal.show();
+}
+
+function submitTransaction() {
+    const form = document.getElementById('transactionForm');
+    const formData = new FormData(form);
+    
+    fetch('{{ url_for("inventory.transaction") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            transactionModal.hide();
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('재고 변동 처리 중 오류가 발생했습니다.');
+    });
+}
+</script>
+{% endblock %} 

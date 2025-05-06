@@ -1,0 +1,13 @@
+<h2>📌 스케줄 미확인자 목록</h2>
+
+{% if schedules %}
+    <ul>
+        {% for s in schedules %}
+        <li>
+            {{ s.date }} - 직원 ID {{ s.user_id }} (출근: {{ s.planned_start }}, 퇴근: {{ s.planned_end }}, 휴게: {{ s.break_time }}분)
+        </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>모든 직원이 스케줄을 확인했습니다 😊</p>
+{% endif %}

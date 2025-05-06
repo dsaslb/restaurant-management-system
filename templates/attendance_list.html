@@ -1,0 +1,45 @@
+<h1>출퇴근 기록</h1>
+<ul>
+  {% for a in records %}
+    <li>{{ a.timestamp }} - 사용자 ID: {{ a.user_id }} - {{ a.action }}</li>
+  {% endfor %}
+</ul>
+<a href="{{ url_for('dashboard') }}">← 대시보드로</a>
+
+<!DOCTYPE html>
+<html>
+<head><title>출퇴근 기록</title></head>
+<body>
+    <h1>출퇴근 기록</h1>
+    <table border="1">
+        <tr><th>직원</th><th>시간</th><th>유형</th></tr>
+        {% for a in records %}
+        <tr>
+            <td>{{ a.user.name }}</td>
+            <td>{{ a.timestamp }}</td>
+            <td>{{ a.action }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('dashboard') }}">← 대시보드</a>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html>
+<head><title>알림 로그</title></head>
+<body>
+  <h2>최근 알림 내역</h2>
+  <table border="1">
+    <tr><th>직원</th><th>유형</th><th>내용</th><th>시간</th></tr>
+    {% for a in alerts %}
+    <tr>
+      <td>{{ a.user.name }}</td>
+      <td>{{ a.alert_type }}</td>
+      <td>{{ a.message }}</td>
+      <td>{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>새 계약 생성</title>
+    <style>
+        body { font-family: '나눔고딕', sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        h1 { text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error { color: red; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>새 계약 생성</h1>
+    
+    <form id="contractForm" method="POST" action="/contract/{{ user_id }}/new">
+        <div class="form-group">
+            <label for="start_date">계약 시작일</label>
+            <input type="date" id="start_date" name="start_date" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="end_date">계약 종료일</label>
+            <input type="date" id="end_date" name="end_date" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="pay_type">급여 유형</label>
+            <select id="pay_type" name="pay_type" required>
+                <option value="시급">시급</option>
+                <option value="월급">월급</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="wage">급여</label>
+            <input type="number" id="wage" name="wage" required min="0">
+        </div>
+        
+        <button type="submit">계약 생성</button>
+    </form>
+    
+    <script>
+        document.getElementById('contractForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.href = `/contract/{{ user_id }}/history`;
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                alert('오류가 발생했습니다: ' + error);
+            });
+        });
+    </script>
+</body>
+</html> 

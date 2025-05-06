@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>계약서 목록</title>
+    <style>
+        body {
+            font-family: '나눔고딕', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .warning {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            margin: 0 4px;
+        }
+        .btn-view {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-new {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-pdf {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-expired {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .flash {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>계약서 목록</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <table>
+            <thead>
+                <tr>
+                    <th>직원명</th>
+                    <th>계약 시작일</th>
+                    <th>계약 종료일</th>
+                    <th>급여 유형</th>
+                    <th>급여</th>
+                    <th>상태</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for info in contracts %}
+                <tr>
+                    <td>{{ info.user.name }}</td>
+                    <td>{{ info.contract.start_date.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if info.contract.end_date %}
+                            {{ info.contract.end_date.strftime('%Y-%m-%d') }}
+                            {% if info.warning %}
+                                <span class="warning">{{ info.warning }}</span>
+                            {% endif %}
+                        {% else %}
+                            무기계약
+                        {% endif %}
+                    </td>
+                    <td>{{ info.contract.pay_type }}</td>
+                    <td>{{ "{:,}".format(info.contract.wage) }}원</td>
+                    <td>
+                        {% if not info.contract.end_date %}
+                            <span class="status status-active">무기계약</span>
+                        {% elif info.contract.end_date < today %}
+                            <span class="status status-expired">만료</span>
+                        {% else %}
+                            <span class="status status-active">유효</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('view_contract', user_id=info.user.id) }}" class="btn btn-view">보기</a>
+                        <a href="{{ url_for('create_new_contract', user_id=info.user.id) }}" class="btn btn-new">재계약</a>
+                        <a href="{{ url_for('download_contract_pdf', user_id=info.user.id) }}" class="btn btn-pdf">PDF</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html> 
+<h1>계약 목록</h1>
+<ul>
+  {% for c in contracts %}
+    <li>사용자 ID: {{ c.user_id }} | 시작: {{ c.start_date }} | 종료: {{ c.end_date }} | 급여: {{ c.wage }}원</li>
+  {% endfor %}
+</ul>
+<a href="{{ url_for('dashboard') }}">← 대시보드로</a>
+
+<!DOCTYPE html>
+<html>
+<head><title>계약 목록</title></head>
+<body>
+    <h1>계약 목록</h1>
+    <table border="1">
+        <tr><th>사용자</th><th>계약 시작</th><th>계약 종료</th><th>급여</th></tr>
+        {% for c in contracts %}
+        <tr>
+            <td>{{ c.user.name }}</td>
+            <td>{{ c.start_date }}</td>
+            <td>{{ c.end_date }}</td>
+            <td>{{ c.wage }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('dashboard') }}">← 대시보드</a>
+</body>
+</html>

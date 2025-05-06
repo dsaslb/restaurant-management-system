@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🍽️ 메뉴 관리</h2>
+        <a href="{{ url_for('menu.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 새 메뉴 등록
+        </a>
+    </div>
+
+    <!-- 검색 필터 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">카테고리</label>
+                    <select name="category" class="form-select">
+                        <option value="">전체</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}" 
+                                {% if category == current_category %}selected{% endif %}>
+                            {{ category }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label">검색어</label>
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="메뉴명 검색"
+                           value="{{ search_query }}">
+                </div>
+                
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> 검색
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 메뉴 목록 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>메뉴명</th>
+                            <th>카테고리</th>
+                            <th>가격</th>
+                            <th>재료</th>
+                            <th>상태</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for menu in menus %}
+                        <tr>
+                            <td>{{ menu.name }}</td>
+                            <td>{{ menu.category }}</td>
+                            <td>{{ menu.price|number_format }}원</td>
+                            <td>
+                                {% for ingredient in menu.ingredients %}
+                                <span class="badge bg-info">{{ ingredient.name }}</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if menu.is_active %}
+                                <span class="badge bg-success">판매중</span>
+                                {% else %}
+                                <span class="badge bg-secondary">판매중지</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('menu.edit', menu_id=menu.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger"
+                                            onclick="deleteMenu({{ menu.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">등록된 메뉴가 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">메뉴 삭제</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                정말로 이 메뉴를 삭제하시겠습니까?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">삭제</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteMenu(menuId) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const form = document.getElementById('deleteForm');
+    form.action = `/menu/${menuId}/delete`;
+    modal.show();
+}
+</script>
+{% endblock %} 

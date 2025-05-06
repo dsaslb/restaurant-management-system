@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>📄 {{ employee.name }}님 퇴직/해고 문서 작성</h2>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">직원 정보</h5>
+            <p class="card-text">
+                <strong>이름:</strong> {{ employee.name }}<br>
+                <strong>계약기간:</strong> {{ contract.start_date.strftime('%Y-%m-%d') }} ~ {{ contract.end_date.strftime('%Y-%m-%d') }}
+            </p>
+        </div>
+    </div>
+
+    <form method="POST" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label for="doc_type" class="form-label">문서 종류:</label>
+            <select name="doc_type" id="doc_type" class="form-select" required>
+                <option value="">선택해주세요</option>
+                <option value="퇴직서">퇴직서 (자진 퇴사)</option>
+                <option value="해고통지서">해고통지서</option>
+                <option value="계약해지서">계약 해지 계약서</option>
+            </select>
+            <div class="invalid-feedback">
+                문서 종류를 선택해주세요.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="reason" class="form-label">사유:</label>
+            <textarea name="reason" id="reason" class="form-control" rows="4" required></textarea>
+            <div class="invalid-feedback">
+                사유를 입력해주세요.
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="effective_date" class="form-label">퇴사/해고 일자:</label>
+            <input type="date" name="effective_date" id="effective_date" class="form-control" required>
+            <div class="invalid-feedback">
+                퇴사/해고 일자를 선택해주세요.
+            </div>
+        </div>
+
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">문서 생성 및 서명 요청</button>
+            <a href="{{ url_for('termination.termination_list') }}" class="btn btn-secondary">목록으로 돌아가기</a>
+        </div>
+    </form>
+</div>
+
+{% block scripts %}
+<script>
+// 폼 유효성 검사
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}
+{% endblock %} 

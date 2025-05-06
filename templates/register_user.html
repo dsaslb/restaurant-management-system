@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>직원 등록</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="/register_user" class="mt-4">
+        <div class="mb-3">
+            <label for="username" class="form-label">아이디</label>
+            <input type="text" class="form-control" id="username" name="username" placeholder="아이디" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="password" class="form-label">비밀번호</label>
+            <input type="password" class="form-control" id="password" name="password" placeholder="비밀번호" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="name" class="form-label">이름</label>
+            <input type="text" class="form-control" id="name" name="name" placeholder="이름" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="store" class="form-label">매장</label>
+            <input type="text" class="form-control" id="store" name="store" placeholder="매장" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="salary_type" class="form-label">급여 형태</label>
+            <select class="form-select" id="salary_type" name="salary_type" required>
+                <option value="">선택하세요</option>
+                <option value="월급">월급</option>
+                <option value="주급">주급</option>
+                <option value="시급">시급</option>
+            </select>
+        </div>
+        
+        <div class="mb-3">
+            <label for="bank_account" class="form-label">계좌번호</label>
+            <input type="text" class="form-control" id="bank_account" name="bank_account" placeholder="계좌번호">
+        </div>
+        
+        <div class="mb-3">
+            <label for="health_check_date" class="form-label">건강검진일</label>
+            <input type="date" class="form-control" id="health_check_date" name="health_check_date">
+        </div>
+        
+        <div class="mb-3">
+            <label for="contract_end_date" class="form-label">계약만료일</label>
+            <input type="date" class="form-control" id="contract_end_date" name="contract_end_date">
+        </div>
+        
+        <div class="mb-3">
+            <label for="medical_check_date" class="form-label">의료검진일</label>
+            <input type="date" class="form-control" id="medical_check_date" name="medical_check_date">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">직원 등록</button>
+        <a href="{{ url_for('view_employees') }}" class="btn btn-secondary">목록으로</a>
+    </form>
+</div>
+{% endblock %} 

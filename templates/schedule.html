@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block content %}
+        <div id="calendar"></div>
+
+<!-- FullCalendar CSS/JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+
+  <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    var calendar = new FullCalendar.Calendar(
+      document.getElementById('calendar'),
+      {
+        initialView: 'dayGridMonth',
+        events: '/schedule/api/events',
+        dateClick: function(info) {
+          let title = prompt('스케줄 제목을 입력하세요:');
+          if (!title) return;
+          fetch('/schedule/api/events', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              title: title,
+              start: info.dateStr,
+              end: info.dateStr
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            calendar.addEvent({
+              id: data.id,
+              title: title,
+              start: info.dateStr,
+              end: info.dateStr
+            });
+          });
+        },
+        eventClick: function(info) {
+          let actual_start = prompt('실제 시작 시간을 입력하세요 (YYYY-MM-DD HH:mm):');
+          if (!actual_start) return;
+          let actual_end = prompt('실제 종료 시간을 입력하세요 (YYYY-MM-DD HH:mm):');
+          if (!actual_end) return;
+          
+          fetch(`/schedule/api/events/${info.event.id}`, {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              actual_start: actual_start,
+              actual_end: actual_end
+            })
+          })
+          .then(res => res.json())
+                .then(data => {
+            if (data.status === 'updated') {
+              alert('실제 근무 시간이 업데이트되었습니다.');
+            }
+          });
+        }
+      }
+    );
+    calendar.render();
+    });
+  </script>
+{% endblock %}

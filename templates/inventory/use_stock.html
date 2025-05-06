@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📦 재고 사용 등록</h2>
+        <a href="{{ url_for('inventory.stock_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 목록으로
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" class="needs-validation" novalidate>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">식자재 선택</label>
+                        <select name="ingredient_id" class="form-select" required>
+                            <option value="">선택하세요</option>
+                            {% for ing in ingredients %}
+                                <option value="{{ ing.id }}" 
+                                        data-unit="{{ ing.unit }}"
+                                        data-current="{{ ing.current_stock }}"
+                                        data-min="{{ ing.min_stock }}">
+                                    {{ ing.name }} (현재: {{ ing.current_stock }}{{ ing.unit }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">
+                            식자재를 선택해주세요.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">사용 수량</label>
+                        <div class="input-group">
+                            <input type="number" 
+                                   name="quantity" 
+                                   class="form-control" 
+                                   step="0.01" 
+                                   min="0.01" 
+                                   required>
+                            <span class="input-group-text unit-display">단위</span>
+                        </div>
+                        <div class="invalid-feedback">
+                            유효한 수량을 입력해주세요.
+                        </div>
+                        <small class="form-text text-muted">
+                            현재 재고: <span id="current-stock">-</span><br>
+                            최소 재고량: <span id="min-stock">-</span>
+                        </small>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">메모</label>
+                        <textarea name="notes" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  placeholder="사용 목적이나 특이사항을 입력하세요"></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 등록
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-4">
+        <h5><i class="fas fa-info-circle"></i> 재고 사용 안내</h5>
+        <ul class="mb-0">
+            <li>재고 사용 시 현재 재고량을 확인하세요.</li>
+            <li>재고가 부족한 경우 사용이 제한됩니다.</li>
+            <li>재고가 최소 재고량 이하로 떨어지면 관리자에게 알림이 전송됩니다.</li>
+        </ul>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ingredientSelect = document.querySelector('select[name="ingredient_id"]');
+    const quantityInput = document.querySelector('input[name="quantity"]');
+    const unitDisplay = document.querySelector('.unit-display');
+    const currentStockDisplay = document.getElementById('current-stock');
+    const minStockDisplay = document.getElementById('min-stock');
+    
+    ingredientSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const unit = selectedOption.dataset.unit;
+            const current = selectedOption.dataset.current;
+            const min = selectedOption.dataset.min;
+            
+            unitDisplay.textContent = unit;
+            currentStockDisplay.textContent = current + unit;
+            minStockDisplay.textContent = min + unit;
+            
+            // 최대 수량 제한 설정
+            quantityInput.max = current;
+            quantityInput.placeholder = `최대 ${current}${unit}까지 입력 가능`;
+        } else {
+            unitDisplay.textContent = '단위';
+            currentStockDisplay.textContent = '-';
+            minStockDisplay.textContent = '-';
+        }
+    });
+    
+    // 폼 유효성 검사
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        const quantity = parseFloat(quantityInput.value);
+        const current = parseFloat(ingredientSelect.options[ingredientSelect.selectedIndex].dataset.current);
+        
+        if (quantity > current) {
+            e.preventDefault();
+            alert('사용 수량이 현재 재고량을 초과할 수 없습니다.');
+        }
+        
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

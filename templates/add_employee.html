@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>직원 등록</title>
+</head>
+<body>
+    <h1>신규 직원 등록</h1>
+    <form method="POST">
+        이름: <input type="text" name="name"><br>
+        아이디: <input type="text" name="username"><br>
+        비밀번호: <input type="password" name="password"><br>
+        전화번호: <input type="text" name="phone"><br>
+        <button type="submit">등록</button>
+    </form>
+    <a href="{{ url_for('manage_employees') }}">← 직원 목록으로</a>
+</body>
+</html>
+
+

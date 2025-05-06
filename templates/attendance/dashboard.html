@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2>관리자 대시보드</h2>
+    
+    <!-- 알림 섹션 -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">알림</h5>
+                </div>
+                <div class="card-body">
+                    {% if notifications %}
+                        <div class="list-group">
+                            {% for notification in notifications %}
+                            <div class="list-group-item">
+                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                <p class="mb-1">{{ notification.content }}</p>
+                                <small class="text-muted">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">새로운 알림이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">근무 통계</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>총 직원 수:</strong> {{ attendance_stats.total_employees }}명</p>
+                    <p><strong>총 근무 일수:</strong> {{ attendance_stats.total_attendance }}일</p>
+                    <p><strong>총 근무 시간:</strong> {{ attendance_stats.total_hours }}시간</p>
+                    <p><strong>일평균 근무 시간:</strong> {{ attendance_stats.avg_hours_per_day }}시간</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">급여 통계</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>총 급여:</strong> {{ "{:,}".format(wage_stats.total_wage) }}원</p>
+                    <p><strong>급여 유형별:</strong></p>
+                    <ul>
+                        {% for type, amount in wage_stats.wage_by_type.items() %}
+                        <li>{{ type }}: {{ "{:,}".format(amount) }}원</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">평가 통계</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>총 평가 수:</strong> {{ evaluation_stats.total_evaluations }}건</p>
+                    <p><strong>평균 근무 강도:</strong> {{ evaluation_stats.avg_intensity }}점</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 계약 만료 임박 -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">계약 만료 임박</h5>
+                </div>
+                <div class="card-body">
+                    {% if expiring_contracts %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>직원명</th>
+                                        <th>직책</th>
+                                        <th>만료일</th>
+                                        <th>자동 갱신</th>
+                                        <th>작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contract in expiring_contracts %}
+                                    <tr>
+                                        <td>{{ contract.employee.user.name }}</td>
+                                        <td>{{ contract.employee.position }}</td>
+                                        <td>{{ contract.end_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ "예" if contract.auto_renew else "아니오" }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" 
+                                                    onclick="renewContract('{{ contract.id }}')">
+                                                갱신
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">만료 임박 계약이 없습니다.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function renewContract(contractId) {
+    if (confirm('계약을 갱신하시겠습니까?')) {
+        fetch(`/api/contracts/${contractId}/renew`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('계약이 갱신되었습니다.');
+                location.reload();
+            } else {
+                alert('계약 갱신 중 오류가 발생했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('계약 갱신 중 오류가 발생했습니다.');
+        });
+    }
+}
+</script>
+{% endblock %}
+{% endblock %} 

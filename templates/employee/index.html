@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}직원 관리 - 레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>직원 관리</h2>
+    </div>
+    <div class="col text-end">
+        <a href="{{ url_for('employee.add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> 직원 추가
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">직원 목록</h5>
+                <div>
+                    <a href="{{ url_for('employee.attendance_history') }}" class="btn btn-info btn-sm">
+                        <i class="bi bi-clock-history"></i> 근태 기록
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>이름</th>
+                                <th>직책</th>
+                                <th>연락처</th>
+                                <th>시급</th>
+                                <th>계약 기간</th>
+                                <th>근태</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee in employees %}
+                            {% set contract = employee.current_contract %}
+                            <tr>
+                                <td>{{ employee.name }}</td>
+                                <td>{{ employee.position }}</td>
+                                <td>{{ employee.phone }}</td>
+                                <td>{{ contract.hourly_wage if contract else '-' }}원</td>
+                                <td>
+                                    {% if contract %}
+                                    {{ contract.start_date.strftime('%Y-%m-%d') }} ~ {{ contract.end_date.strftime('%Y-%m-%d') }}
+                                    {% if contract.end_date.date() <= (now + timedelta(days=30)).date() %}
+                                    <span class="badge bg-warning">만료 임박</span>
+                                    {% endif %}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" onclick="recordAttendance({{ employee.id }}, '출근')">
+                                        <i class="bi bi-box-arrow-in-right"></i> 출근
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="recordAttendance({{ employee.id }}, '퇴근')">
+                                        <i class="bi bi-box-arrow-right"></i> 퇴근
+                                    </button>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('employee.edit', id=employee.id) }}" class="btn btn-sm btn-secondary">
+                                        <i class="bi bi-pencil"></i> 수정
+                                    </a>
+                                    {% if contract and contract.end_date.date() <= (now + timedelta(days=30)).date() %}
+                                    <button class="btn btn-sm btn-warning" onclick="renewContract({{ employee.id }})">
+                                        <i class="bi bi-arrow-repeat"></i> 계약 갱신
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function recordAttendance(employeeId, type) {
+    const formData = new FormData();
+    formData.append('employee_id', employeeId);
+    formData.append('attendance_type', type);
+    
+    fetch('{{ url_for("employee.attendance") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('근태 기록 중 오류가 발생했습니다.');
+    });
+}
+
+function renewContract(employeeId) {
+    if (!confirm('계약을 갱신하시겠습니까?')) return;
+    
+    fetch(`{{ url_for("employee.renew_contract", id=0) }}`.replace('0', employeeId), {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('계약 갱신 중 오류가 발생했습니다.');
+    });
+}
+</script>
+{% endblock %} 

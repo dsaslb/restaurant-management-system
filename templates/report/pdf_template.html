@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📄 판매 보고서</h2>
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 돌아가기
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('report.report_pdf') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">보고서 유형</label>
+                    <select name="freq" class="form-select" required>
+                        <option value="monthly">월간 보고서</option>
+                        <option value="weekly">주간 보고서</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">연도</label>
+                    <select name="year" class="form-select" required>
+                        {% for year in years %}
+                        <option value="{{ year }}" 
+                                {% if year == current_year %}selected{% endif %}>
+                            {{ year }}년
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">월</label>
+                    <select name="month" class="form-select" required>
+                        {% for month in months %}
+                        <option value="{{ month }}" 
+                                {% if month == current_month %}selected{% endif %}>
+                            {{ month }}월
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-file-pdf"></i> PDF 다운로드
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI 분석 결과 -->
+    {% if analysis %}
+    <div class="card mt-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">🤖 AI 분석 결과</h5>
+                <a href="{{ url_for('report.analyze_report', year=current_year, month=current_month) }}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-robot"></i> 상세 분석 보기
+                </a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-primary">
+                                <i class="fas fa-chart-line"></i> 판매 현황 요약
+                            </h6>
+                            <p class="card-text small">{{ analysis.summary|truncate(100) }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-warning">
+                                <i class="fas fa-exclamation-circle"></i> 개선 필요 사항
+                            </h6>
+                            <p class="card-text small">{{ analysis.improvements|truncate(100) }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-success">
+                                <i class="fas fa-lightbulb"></i> 추천사항
+                            </h6>
+                            <p class="card-text small">{{ analysis.recommendations|truncate(100) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 보고서 미리보기 -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">보고서 내용</h5>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                보고서에는 다음 정보가 포함됩니다:
+                <ul class="mb-0 mt-2">
+                    <li>기간별 총 판매액 및 판매 수량</li>
+                    <li>메뉴별 판매 현황 및 비중</li>
+                    <li>평균 판매액</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

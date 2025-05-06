@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>📄 {{ document.document_type }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h5>문서 정보</h5>
+                <p><strong>생성일:</strong> {{ document.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>효력 발생일:</strong> {{ document.effective_date.strftime('%Y-%m-%d') }}</p>
+            </div>
+
+            <div class="mb-4">
+                <h5>사유</h5>
+                <p class="border p-3 bg-light">{{ document.reason }}</p>
+            </div>
+
+            {% if document.pdf_path %}
+            <div class="mb-4">
+                <h5>PDF 문서</h5>
+                <a href="{{ url_for('static', filename=document.pdf_path) }}" 
+                   class="btn btn-info" 
+                   target="_blank">
+                    PDF 보기
+                </a>
+            </div>
+            {% endif %}
+
+            {% if not document.signed_by_employee %}
+            <form method="POST" class="needs-validation" novalidate>
+                <div class="alert alert-warning">
+                    <p>본인은 위 내용을 확인하고 동의하며 전자 서명합니다.</p>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">서명하기</button>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">돌아가기</a>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-success">
+                <p>서명이 완료되었습니다.</p>
+                <p><small>서명일시: {{ document.employee_signed_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// 폼 유효성 검사
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}
+{% endblock %} 

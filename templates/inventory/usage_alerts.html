@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🔔 재고 사용 알림 설정</h2>
+        <a href="{{ url_for('inventory.stock_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 목록으로
+        </a>
+    </div>
+
+    <!-- 알림 설정 추가 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">알림 설정 추가</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('inventory.add_stock_usage_alert') }}" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">식자재</label>
+                    <select name="ingredient_id" class="form-select" required>
+                        <option value="">선택하세요</option>
+                        {% for ing in ingredients %}
+                        <option value="{{ ing.id }}">{{ ing.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">알림 기준 수량</label>
+                    <div class="input-group">
+                        <input type="number" 
+                               name="threshold" 
+                               class="form-control" 
+                               step="0.01" 
+                               min="0.01" 
+                               required>
+                        <span class="input-group-text">단위</span>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-plus"></i> 추가
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 알림 설정 목록 -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">알림 설정 목록</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>식자재</th>
+                            <th>알림 기준</th>
+                            <th>상태</th>
+                            <th>설정일</th>
+                            <th>처리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in alerts %}
+                        <tr>
+                            <td>{{ alert.ingredient.name }}</td>
+                            <td>{{ alert.threshold }} {{ alert.ingredient.unit }}</td>
+                            <td>
+                                {% if alert.is_active %}
+                                <span class="badge bg-success">활성화</span>
+                                {% else %}
+                                <span class="badge bg-secondary">비활성화</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <form method="POST" 
+                                          action="{{ url_for('inventory.toggle_stock_usage_alert', alert_id=alert.id) }}"
+                                          class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-power-off"></i>
+                                            {% if alert.is_active %}비활성화{% else %}활성화{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="POST" 
+                                          action="{{ url_for('inventory.delete_stock_usage_alert', alert_id=alert.id) }}"
+                                          class="d-inline ms-1"
+                                          onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i> 삭제
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">설정된 알림이 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 안내 -->
+    <div class="alert alert-info mt-4">
+        <h5><i class="fas fa-info-circle"></i> 알림 설정 안내</h5>
+        <ul class="mb-0">
+            <li>식자재별로 재고 사용 알림 기준을 설정할 수 있습니다.</li>
+            <li>설정된 기준 이상으로 재고가 사용되면 관리자에게 알림이 전송됩니다.</li>
+            <li>알림은 활성화/비활성화 상태를 전환할 수 있습니다.</li>
+            <li>불필요한 알림 설정은 삭제할 수 있습니다.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %} 

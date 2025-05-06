@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}레스토랑 관리 시스템{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>직원 관리</h4>
+                </div>
+                <div class="card-body">
+                    <p>직원 정보 관리, 근태 기록, 계약 관리 등을 할 수 있습니다.</p>
+                    <a href="{{ url_for('employee.index') }}" class="btn btn-primary">직원 관리로 이동</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>일정 관리</h4>
+                </div>
+                <div class="card-body">
+                    <p>직원들의 근무 일정을 관리하고 실제 근무 시간을 기록할 수 있습니다.</p>
+                    <a href="{{ url_for('schedule.index') }}" class="btn btn-primary">일정 관리로 이동</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2>근무 평가 현황</h2>
+    
+    <!-- 필터 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form method="GET" class="form-inline">
+                <input type="date" name="start_date" class="form-control mr-2" 
+                       value="{{ start_date.strftime('%Y-%m-%d') if start_date else '' }}">
+                <input type="date" name="end_date" class="form-control mr-2" 
+                       value="{{ end_date.strftime('%Y-%m-%d') if end_date else '' }}">
+                <select name="store_id" class="form-control mr-2">
+                    <option value="">전체 매장</option>
+                    <!-- 매장 목록은 추후 추가 -->
+                </select>
+                <div class="form-check mr-2">
+                    <input type="checkbox" class="form-check-input" id="show_anonymous" name="show_anonymous" 
+                           {% if show_anonymous %}checked{% endif %}>
+                    <label class="form-check-label" for="show_anonymous">익명 평가 포함</label>
+                </div>
+                <button type="submit" class="btn btn-primary">조회</button>
+                <a href="/admin/evaluations/pdf?start_date={{ start_date.strftime('%Y-%m-%d') if start_date else '' }}&end_date={{ end_date.strftime('%Y-%m-%d') if end_date else '' }}&store_id={{ store_id }}&show_anonymous={{ show_anonymous }}" 
+                   class="btn btn-secondary ml-2">PDF 다운로드</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">평가 통계</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>총 평가 수:</strong> {{ stats.total_evaluations }}건</p>
+                    <p><strong>평균 근무 강도:</strong> {{ stats.avg_intensity }}점</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">강도별 분포</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="intensityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 일별 평가 차트 -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">일별 평가 현황</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="evaluationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 피드백 목록 -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">피드백 목록</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>날짜</th>
+                                    <th>평가 점수</th>
+                                    <th>피드백</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feedback in stats.feedbacks %}
+                                <tr>
+                                    <td>{{ feedback.date }}</td>
+                                    <td>{{ feedback.intensity }}점</td>
+                                    <td>{{ feedback.content }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 일별 평가 차트
+const evaluationCtx = document.getElementById('evaluationChart').getContext('2d');
+const evaluationData = JSON.parse(document.getElementById('evaluationData').textContent);
+
+new Chart(evaluationCtx, {
+    type: 'line',
+    data: {
+        labels: evaluationData.map(d => d.date),
+        datasets: [{
+            label: '평균 근무 강도',
+            data: evaluationData.map(d => d.avg_intensity),
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 5,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// 강도별 분포 차트
+const intensityCtx = document.getElementById('intensityChart').getContext('2d');
+const intensityData = JSON.parse(document.getElementById('intensityData').textContent);
+
+new Chart(intensityCtx, {
+    type: 'bar',
+    data: {
+        labels: Object.keys(intensityData),
+        datasets: [{
+            label: '평가 수',
+            data: Object.values(intensityData),
+            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            borderColor: 'rgb(75, 192, 192)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+</script>
+
+<!-- 데이터를 안전하게 전달하기 위한 숨겨진 요소 -->
+<script type="application/json" id="evaluationData">
+{{ stats.daily_evaluations|tojson|safe }}
+</script>
+<script type="application/json" id="intensityData">
+{{ stats.intensity_distribution|tojson|safe }}
+</script>
+{% endblock %}
+{% endblock %} 
