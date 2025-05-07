@@ -46,11 +46,11 @@
             <tbody>
                 {% for order in orders %}
                 <tr>
-                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>{{ order.ingredient.name }}</td>
-                    <td>{{ order.quantity }} {{ order.ingredient.unit }}</td>
-                    <td>{{ "₩{:,.0f}".format(order.cost_per_unit) }}</td>
-                    <td>{{ "₩{:,.0f}".format(order.total_cost) }}</td>
+                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else 'N/A' }}</td>
+                    <td>{{ order.ingredient.name if order.ingredient.name else 'N/A' }}</td>
+                    <td>{{ order.quantity if order.quantity else '0' }} {{ order.ingredient.unit if order.ingredient.unit else 'N/A' }}</td>
+                    <td>{{ "₩{:,.0f}".format(order.cost_per_unit) if order.cost_per_unit is not None else '₩0' }}</td>
+                    <td>{{ "₩{:,.0f}".format(order.total_cost) if order.total_cost is not None else '₩0' }}</td>
                     <td>
                         {% if order.status == 'pending' %}
                         <span class="badge bg-warning">대기중</span>

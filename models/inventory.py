@@ -113,10 +113,12 @@ class Ingredient(db.Model):
     __tablename__ = 'ingredients'
     
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
     item_id = db.Column(db.Integer, db.ForeignKey('inventory_items.id'), nullable=False)
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'))
     quantity = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(20))
+    min_quantity = db.Column(db.Float, default=0)
     
     # 관계 설정
     item = db.relationship('InventoryItem', back_populates='ingredients')

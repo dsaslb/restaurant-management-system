@@ -35,10 +35,12 @@ def add():
         min_quantity = float(request.form.get('min_quantity', 0))
         current_quantity = float(request.form.get('current_quantity', 0))
         
+        # Ingredient 모델의 필드 명시
         ingredient = Ingredient(
             name=name,
             unit=unit,
-            min_quantity=min_quantity
+            min_quantity=min_quantity,
+            item_id=1  # 임시 item_id 값 설정
         )
         db.session.add(ingredient)
         db.session.flush()
@@ -251,7 +253,10 @@ def order():
                         db.session.add(order_item)
                         total_amount += order_item.total_price
             
-            order.total_amount = total_amount
+            order.total_amount = total_amount or 0
+            order.created_at = order.created_at or datetime.utcnow()
+            order.updated_at = order.updated_at or datetime.utcnow()
+            order.status = order.status or 'pending'
             db.session.commit()
             
             flash('발주가 성공적으로 등록되었습니다.', 'success')

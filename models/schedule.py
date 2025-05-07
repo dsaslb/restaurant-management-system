@@ -13,6 +13,8 @@ class Schedule(db.Model):
     status = db.Column(db.String(20), default='대기중')  # 대기중, 승인, 거절
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    date = db.Column(db.Date, nullable=False, default=lambda: datetime.utcnow().date())
+    is_approved = db.Column(db.Boolean, default=False)  # 승인 여부를 저장하는 속성 추가
 
     # 관계 설정
     employee = db.relationship('Employee', back_populates='schedules')

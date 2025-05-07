@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, flash, request, render_template
+from flask import Flask, redirect, url_for, flash, request, render_template, Markup
 from dotenv import load_dotenv
 from extensions import db, migrate, login_manager
 import os
@@ -19,6 +19,9 @@ from routes.inventory import inventory_bp
 from routes.order import bp as order_bp
 from routes.schedule import schedule_bp
 from routes.main import main_bp
+from routes.suppliers import supplier_bp
+from routes.notification import notification_bp
+from routes.employees import employees_bp
 from datetime import datetime, timedelta
 
 # 환경 변수 로드
@@ -29,7 +32,7 @@ if not os.path.exists('logs'):
     os.mkdir('logs')
 
 # 파일 핸들러 설정
-file_handler = RotatingFileHandler('logs/restaurant_system.log', maxBytes=10240, backupCount=10)
+file_handler = RotatingFileHandler('logs/restaurant_system_new.log', maxBytes=10240, backupCount=10)
 file_handler.setFormatter(logging.Formatter(
     '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
 ))
@@ -51,6 +54,9 @@ logger.setLevel(logging.INFO)
 # 앱 인스턴스 생성
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# 템플릿 자동 리로드 설정
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # 세션 설정
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -82,6 +88,11 @@ def create_admin():
         # 기존 admin01 계정이 있다면 삭제
         admin = User.query.filter_by(username='admin01').first()
         if admin:
+            # 해당 관리자와 연결된 주문 데이터 삭제
+            Order.query.filter_by(user_id=admin.id).delete()
+            db.session.commit()
+            
+            # 관리자 계정 삭제
             db.session.delete(admin)
             db.session.commit()
             logger.info('기존 관리자 계정이 삭제되었습니다.')
@@ -364,22 +375,60 @@ def index():
 app.register_blueprint(auth_bp)
 app.register_blueprint(main_bp)
 app.register_blueprint(employee_bp)
+app.register_blueprint(supplier_bp)
 app.register_blueprint(inventory_bp)
 app.register_blueprint(order_bp)
 app.register_blueprint(schedule_bp)
+app.register_blueprint(notification_bp)
+app.register_blueprint(employees_bp)
 
 # 스케줄러 초기화
 scheduler = BackgroundScheduler()
-init_scheduler(scheduler)
-scheduler.start()
-atexit.register(lambda: scheduler.shutdown())
+# 스케줄러 초기화 및 시작 비활성화 (문제 해결을 위해)
+# init_scheduler(scheduler)
+# scheduler.start()
+# atexit.register(lambda: scheduler.shutdown())
 
 # 데이터베이스 초기화 및 관리자 계정 생성
 with app.app_context():
-    db.drop_all()  # 기존 데이터베이스 삭제
-    db.create_all()  # 새로운 데이터베이스 생성
-    create_admin()  # 관리자 계정 생성
-    create_sample_data()  # 예시 데이터 생성
+    try:
+        # 기존 데이터와의 충돌을 방지하기 위해 데이터베이스를 재생성
+        db.drop_all()  # 모든 테이블 삭제
+        db.create_all()  # 테이블 다시 생성
+        
+        # 관리자 계정 생성
+        admin = User(
+            username='admin01',
+            email='admin@example.com',
+            role='admin',
+            is_active=True
+        )
+        admin.set_password('1234')
+        db.session.add(admin)
+        db.session.commit()
+        logger.info('관리자 계정이 생성되었습니다.')
+        
+        # 샘플 데이터 생성
+        create_sample_data()
+        logger.info('샘플 데이터가 생성되었습니다.')
+    except Exception as e:
+        logger.error(f"데이터베이스 초기화 중 오류 발생: {str(e)}")
+        db.session.rollback()
+
+# Jinja2 필터 정의
+def status_color(status):
+    """주문 상태에 따라 색상을 반환합니다."""
+    colors = {
+        'pending': 'yellow',
+        'approved': 'green',
+        'rejected': 'red',
+        'cancelled': 'gray',
+        'received': 'blue'
+    }
+    return colors.get(status, 'black')
+
+# 필터 등록
+app.jinja_env.filters['status_color'] = status_color
 
 if __name__ == '__main__':
     logger.info('레스토랑 시스템 시작')

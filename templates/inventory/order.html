@@ -23,26 +23,26 @@
                         <tbody>
                             {% for entry in inventory_list %}
                             <tr>
-                                <td>{{ entry.item.name }}</td>
+                                <td>{{ entry.item.name if entry.item.name else 'N/A' }}</td>
                                 <td>
                                     {% if entry.expire_soon %}
                                     <span class="text-danger">
                                         <i class="fas fa-exclamation-triangle"></i>
-                                        {{ entry.expire_date }}
+                                        {{ entry.expire_date if entry.expire_date else '—' }}
                                     </span>
                                     {% else %}
-                                    {{ entry.expire_date or '—' }}
+                                    {{ entry.expire_date if entry.expire_date else '—' }}
                                     {% endif %}
                                 </td>
                                 <td>
                                     <div class="input-group">
                                         <input type="number" 
                                                class="form-control" 
-                                               name="qty_{{ entry.item.id }}" 
+                                               name="qty_{{ entry.item.id if entry.item.id else '0' }}" 
                                                min="0" 
                                                value="0"
                                                style="width: 100px;" />
-                                        <span class="input-group-text">{{ entry.item.unit }}</span>
+                                        <span class="input-group-text">{{ entry.item.unit if entry.item.unit else 'N/A' }}</span>
                                     </div>
                                 </td>
                             </tr>

@@ -1,0 +1,70 @@
+2025-05-07 20:42:32,822 INFO: °ü¸®ÀÚ °èÁ¤ÀÌ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:409]
+2025-05-07 20:42:45,973 ERROR: µ¥ÀÌÅÍº£ÀÌ½º ÃÊ±âÈ­ Áß ¿À·ù ¹ß»ı: (sqlite3.OperationalError) database is locked
+[SQL: 
+DROP TABLE schedule_history]
+(Background on this error at: https://sqlalche.me/e/14/e3q8) [in C:\restaurant_system\restaurant_system_web\app.py:415]
+2025-05-07 20:42:46,253 ERROR: µ¥ÀÌÅÍº£ÀÌ½º ÃÊ±âÈ­ Áß ¿À·ù ¹ß»ı: (sqlite3.OperationalError) database is locked
+[SQL: 
+DROP TABLE schedule_history]
+(Background on this error at: https://sqlalche.me/e/14/e3q8) [in C:\restaurant_system\restaurant_system_web\app.py:415]
+2025-05-07 20:42:47,295 ERROR: µ¥ÀÌÅÍº£ÀÌ½º ÃÊ±âÈ­ Áß ¿À·ù ¹ß»ı: (sqlite3.OperationalError) database is locked
+[SQL: 
+DROP TABLE schedule_history]
+(Background on this error at: https://sqlalche.me/e/14/e3q8) [in C:\restaurant_system\restaurant_system_web\app.py:415]
+2025-05-07 20:42:50,371 INFO: »ùÇÃ µ¥ÀÌÅÍ°¡ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:413]
+2025-05-07 20:43:08,749 INFO: °ü¸®ÀÚ °èÁ¤ÀÌ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:409]
+2025-05-07 20:43:28,149 INFO: »ùÇÃ µ¥ÀÌÅÍ°¡ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:413]
+2025-05-07 20:43:28,816 INFO:  * Restarting with stat [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:44:06,214 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\app.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:44:09,798 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\app.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:44:09,745 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\app.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:44:11,130 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\app.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:44:15,715 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\app.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:44:22,724 INFO: °ü¸®ÀÚ °èÁ¤ÀÌ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:409]
+2025-05-07 20:44:29,089 INFO: »ùÇÃ µ¥ÀÌÅÍ°¡ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:413]
+2025-05-07 20:44:32,582 INFO:  * Restarting with stat [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:45:21,817 INFO:  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit) [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:45:32,945 ERROR: µ¥ÀÌÅÍº£ÀÌ½º ÃÊ±âÈ­ Áß ¿À·ù ¹ß»ı: (sqlite3.OperationalError) no such table: users
+[SQL: INSERT INTO users (username, email, password_hash, role, is_active, created_at, last_login) VALUES (?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('admin01', 'admin@example.com', 'pbkdf2:sha256:260000$aEFTkJsWbGLMRZVi$97bb3e580054835e1d784690571575d8340774917b792a0a5b89a22d4be03695', 'admin', 1, '2025-05-07 11:45:30.805351', None)]
+(Background on this error at: https://sqlalche.me/e/14/e3q8) [in C:\restaurant_system\restaurant_system_web\app.py:415]
+2025-05-07 20:45:32,983 ERROR: µ¥ÀÌÅÍº£ÀÌ½º ÃÊ±âÈ­ Áß ¿À·ù ¹ß»ı: (sqlite3.OperationalError) no such table: stock_transactions
+[SQL: 
+DROP TABLE stock_transactions]
+(Background on this error at: https://sqlalche.me/e/14/e3q8) [in C:\restaurant_system\restaurant_system_web\app.py:415]
+2025-05-07 20:45:33,058 ERROR: µ¥ÀÌÅÍº£ÀÌ½º ÃÊ±âÈ­ Áß ¿À·ù ¹ß»ı: (sqlite3.OperationalError) no such table: users
+[SQL: 
+DROP TABLE users]
+(Background on this error at: https://sqlalche.me/e/14/e3q8) [in C:\restaurant_system\restaurant_system_web\app.py:415]
+2025-05-07 20:45:33,169 ERROR: µ¥ÀÌÅÍº£ÀÌ½º ÃÊ±âÈ­ Áß ¿À·ù ¹ß»ı: (sqlite3.OperationalError) no such table: users
+[SQL: 
+DROP TABLE users]
+(Background on this error at: https://sqlalche.me/e/14/e3q8) [in C:\restaurant_system\restaurant_system_web\app.py:415]
+2025-05-07 20:45:39,177 INFO: 127.0.0.1 - - [07/May/2025 20:45:39] "[32mGET /employee/ HTTP/1.1[0m" 302 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:45:40,334 INFO: 127.0.0.1 - - [07/May/2025 20:45:40] "GET /auth/login?next=%2Femployee%2F HTTP/1.1" 200 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:45:44,434 INFO: °ü¸®ÀÚ °èÁ¤ÀÌ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:409]
+2025-05-07 20:45:48,787 INFO: 127.0.0.1 - - [07/May/2025 20:45:48] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:45:49,120 INFO: 127.0.0.1 - - [07/May/2025 20:45:49] "[36mGET /static/js/main.js HTTP/1.1[0m" 304 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:45:57,649 INFO: 127.0.0.1 - - [07/May/2025 20:45:57] "[32mPOST /auth/login?next=%2Femployee%2F HTTP/1.1[0m" 302 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:45:58,420 INFO: 127.0.0.1 - - [07/May/2025 20:45:58] "GET /dashboard HTTP/1.1" 200 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:45:59,364 INFO: 127.0.0.1 - - [07/May/2025 20:45:59] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:00,773 INFO: 127.0.0.1 - - [07/May/2025 20:46:00] "[36mGET /static/js/main.js HTTP/1.1[0m" 304 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:12,398 INFO: 127.0.0.1 - - [07/May/2025 20:46:12] "GET /employee/ HTTP/1.1" 200 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:17,437 INFO: »ùÇÃ µ¥ÀÌÅÍ°¡ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:413]
+2025-05-07 20:46:26,387 INFO: 127.0.0.1 - - [07/May/2025 20:46:26] "[35m[1mGET /order/ HTTP/1.1[0m" 500 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:30,636 INFO: 127.0.0.1 - - [07/May/2025 20:46:30] "GET /order/?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:30,758 INFO: 127.0.0.1 - - [07/May/2025 20:46:30] "GET /order/?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:33,696 INFO: 127.0.0.1 - - [07/May/2025 20:46:33] "GET /order/?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:34,138 INFO: 127.0.0.1 - - [07/May/2025 20:46:34] "GET /order/?__debugger__=yes&cmd=resource&f=ubuntu.ttf HTTP/1.1" 200 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:36,542 INFO: 127.0.0.1 - - [07/May/2025 20:46:36] "GET /schedule/ HTTP/1.1" 200 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:41,470 INFO: 127.0.0.1 - - [07/May/2025 20:46:41] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:46:41,689 INFO: 127.0.0.1 - - [07/May/2025 20:46:41] "[36mGET /static/js/main.js HTTP/1.1[0m" 304 - [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:47:03,398 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\routes\\employees.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:47:03,805 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\routes\\employees.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:47:03,679 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\routes\\employees.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:47:04,011 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\routes\\employees.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:47:13,324 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\routes\\employees.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:47:21,941 INFO:  * Restarting with stat [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:47:55,868 INFO: °ü¸®ÀÚ °èÁ¤ÀÌ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:409]
+2025-05-07 20:47:59,266 INFO:  * Detected change in 'C:\\restaurant_system\\restaurant_system_web\\routes\\employees.py', reloading [in C:\restaurant_system\restaurant_system_web\.venv\Lib\site-packages\werkzeug\_internal.py:225]
+2025-05-07 20:48:17,605 INFO: »ùÇÃ µ¥ÀÌÅÍ°¡ »ı¼ºµÇ¾ú½À´Ï´Ù. [in C:\restaurant_system\restaurant_system_web\app.py:413]

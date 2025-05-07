@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from models import db, Notification
 from datetime import datetime
 
-notification_bp = Blueprint('notification', __name__)
+notification_bp = Blueprint('notification', __name__, url_prefix='/notification')
 
 @notification_bp.route('/')
 @login_required

@@ -5,9 +5,55 @@ from datetime import datetime, timedelta
 import logging
 from typing import Dict, List, Optional
 from utils.notification import send_notification
+from flask_login import login_required
 
 logger = logging.getLogger(__name__)
-orders_bp = Blueprint('orders', __name__)
+orders_bp = Blueprint('orders', __name__, url_prefix='/api/orders')
+
+@orders_bp.route('/', methods=['GET'])
+@login_required
+def list_orders():
+    orders = Order.query.all()
+    return jsonify([{
+        'id': o.id,
+        'supplier_id': o.supplier_id,
+        'item_id': o.item_id,
+        'quantity': o.quantity,
+        'status': o.status
+    } for o in orders])
+
+@orders_bp.route('/', methods=['POST'])
+@login_required
+def create_order():
+    data = request.get_json()
+    o = Order(
+        supplier_id=data['supplier_id'],
+        item_id=data['item_id'],
+        quantity=data.get('quantity', 1),
+        status=data.get('status', 'pending')
+    )
+    db.session.add(o)
+    db.session.commit()
+    return jsonify({'message': '주문 생성 완료', 'order_id': o.id}), 201
+
+@orders_bp.route('/<int:id>', methods=['PUT'])
+@login_required
+def update_order(id):
+    o = Order.query.get_or_404(id)
+    data = request.get_json()
+    o.supplier_id = data.get('supplier_id', o.supplier_id)
+    o.item_id = data.get('item_id', o.item_id)
+    o.quantity = data.get('quantity', o.quantity)
+    o.status = data.get('status', o.status)
+    db.session.commit()
+    return jsonify({'message': '주문 수정 완료'})
+
+@orders_bp.route('/<int:id>', methods=['DELETE'])
+@login_required
+def delete_order(id):
+    Order.query.filter_by(id=id).delete()
+    db.session.commit()
+    return jsonify({'message': '주문 삭제 완료'})
 
 @orders_bp.route('/orders')
 def order_list():
@@ -27,7 +73,7 @@ def order_list():
         return render_template('error.html', error="발주 목록을 불러오는데 실패했습니다.")
 
 @orders_bp.route('/orders/create', methods=['GET', 'POST'])
-def create_order():
+def create_order_form():
     """발주 생성"""
     try:
         if request.method == 'POST':
@@ -71,7 +117,7 @@ def create_order():
         return jsonify({'error': '발주 등록에 실패했습니다.'}), 500
 
 @orders_bp.route('/orders/<int:order_id>/update', methods=['POST'])
-def update_order(order_id: int):
+def update_order_status(order_id: int):
     """발주 상태 업데이트"""
     try:
         order = Order.query.get_or_404(order_id)
