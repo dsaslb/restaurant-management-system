@@ -335,4 +335,34 @@ def delete_order(order_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500 
+        return jsonify({'error': str(e)}), 500
+
+@order_bp.route('/orders', methods=['GET', 'POST'])
+@login_required
+def order_list():
+    if request.method == 'POST':
+        try:
+            item_name = request.form['item_name']
+            category = request.form['category']
+            quantity = int(request.form['quantity'])
+            expected_date = datetime.strptime(request.form['expected_date'], '%Y-%m-%d')
+            supplier = request.form['supplier']
+
+            new_order = Order(
+                item_name=item_name,
+                category=category,
+                quantity=quantity,
+                expected_date=expected_date,
+                supplier=supplier
+            )
+            db.session.add(new_order)
+            db.session.commit()
+            flash('발주가 성공적으로 등록되었습니다.', 'success')
+            return redirect(url_for('order.order_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'발주 등록 중 오류가 발생했습니다: {str(e)}', 'error')
+            return redirect(url_for('order.order_list'))
+
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    return render_template('orders/order_list.html', orders=orders) 

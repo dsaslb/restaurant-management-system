@@ -1,23 +1,32 @@
 from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for
 from models import Employee, db
-from datetime import datetime
+from datetime import datetime, date
 from routes.auth import token_required
 from flask_login import login_required, current_user
+from models.attendance import Attendance  # Attendance 모델을 가정
 
 employees_bp = Blueprint('employees', __name__, url_prefix='/employees')
 
 @employees_bp.route('/', methods=['GET'])
 @login_required
 def index():
-    # 전체 직원 불러오기
+    # 전체 직원 정보
     employees = Employee.query.order_by(Employee.name).all()
-    # 현재 사용자가 manage_users 권한(=관리자)인지 확인
-    perms = getattr(current_user, 'permissions', {})
-    is_admin = perms.get('manage_users', False)
+
+    # 오늘 날짜 기준 출퇴근 기록 조회
+    today = date.today()
+    attendance_map = {}
+    records = Attendance.query.filter_by(date=today).all()
+    for att in records:
+        attendance_map[att.user_id] = att
+
+    # 현재 사용자가 관리자 권한인지 확인
+    is_admin = current_user.permissions.get('manage_users', False)
 
     return render_template(
         'employees/index.html',
         employees=employees,
+        attendance_map=attendance_map,
         is_admin=is_admin
     )
 

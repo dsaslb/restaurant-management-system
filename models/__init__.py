@@ -1,24 +1,23 @@
-from extensions import db
 from models.user import User
-from models.employee import Employee, Contract, Attendance
+from models.employee import Employee
+from models.supplier import Supplier
+from models.order import Order, OrderItem
 from models.inventory import (
     ProductCategory, InventoryStatus, InventoryItem, InventoryBatch,
     Ingredient, StockItem, StockTransaction, StockUsageAlert,
     Inventory, Disposal
 )
-from models.supplier import Supplier
-from models.order import Order, OrderItem
 from models.schedule import Schedule, ScheduleHistory
 from models.notification import Notification, AlertLog
-from models.recipe import Recipe
-from models.pos import POSSaleLog, POSSaleItem, POSPerformanceLog
+from models.attendance import Attendance
+from models.contract import Contract
 
 __all__ = [
-    'db',
     'User',
     'Employee',
-    'Contract',
-    'Attendance',
+    'Supplier',
+    'Order',
+    'OrderItem',
     'ProductCategory',
     'InventoryStatus',
     'InventoryItem',
@@ -29,17 +28,12 @@ __all__ = [
     'StockUsageAlert',
     'Inventory',
     'Disposal',
-    'Supplier',
-    'Order',
-    'OrderItem',
     'Schedule',
     'ScheduleHistory',
     'Notification',
     'AlertLog',
-    'Recipe',
-    'POSSaleLog',
-    'POSSaleItem',
-    'POSPerformanceLog'
+    'Attendance',
+    'Contract'
 ]
 
 # models 패키지 초기화

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">📦 발주 관리</h2>
+
+    <!-- 알림 메시지 표시 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- 발주 등록 폼 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">새 발주 등록</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="row g-3">
+                <div class="col-md-4">
+                    <label for="item_name" class="form-label">품목명</label>
+                    <input type="text" class="form-control" id="item_name" name="item_name" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="category" class="form-label">카테고리</label>
+                    <input type="text" class="form-control" id="category" name="category">
+                </div>
+                <div class="col-md-4">
+                    <label for="quantity" class="form-label">수량</label>
+                    <input type="number" class="form-control" id="quantity" name="quantity" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="expected_date" class="form-label">입고 예정일</label>
+                    <input type="date" class="form-control" id="expected_date" name="expected_date" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="supplier" class="form-label">업체명</label>
+                    <input type="text" class="form-control" id="supplier" name="supplier">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">발주 등록</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 발주 목록 -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">📝 발주 목록</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>품목명</th>
+                            <th>카테고리</th>
+                            <th>수량</th>
+                            <th>업체명</th>
+                            <th>입고 예정일</th>
+                            <th>등록일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.item_name }}</td>
+                            <td>{{ order.category }}</td>
+                            <td>{{ order.quantity }}</td>
+                            <td>{{ order.supplier }}</td>
+                            <td>{{ order.expected_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

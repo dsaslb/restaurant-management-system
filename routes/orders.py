@@ -1,19 +1,25 @@
-from flask import Blueprint, render_template, request, jsonify, current_app
-from models.inventory import Inventory, Order, ProductCategory, InventoryStatus
-from database import db
+from flask import Blueprint, render_template, request, jsonify, current_app, flash, redirect, url_for
+from models.order import Order
+from models.inventory import Inventory, ProductCategory, InventoryStatus
+from extensions import db
 from datetime import datetime, timedelta
 import logging
 from typing import Dict, List, Optional
 from utils.notification import send_notification
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 logger = logging.getLogger(__name__)
-orders_bp = Blueprint('orders', __name__, url_prefix='/api/orders')
+order_bp = Blueprint('orders', __name__, url_prefix='/api/orders')
 
-@orders_bp.route('/', methods=['GET'])
+@order_bp.route('/', methods=['GET'])
 @login_required
 def list_orders():
-    orders = Order.query.all()
+    # 관리자면 전체 주문, 아니면 본인 주문만 조회
+    if current_user.permissions.get('manage_users') or current_user.permissions.get('ordering'):
+        orders = Order.query.order_by(Order.ordered_at.desc()).all()
+    else:
+        orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.ordered_at.desc()).all()
+
     return jsonify([{
         'id': o.id,
         'supplier_id': o.supplier_id,
@@ -22,7 +28,7 @@ def list_orders():
         'status': o.status
     } for o in orders])
 
-@orders_bp.route('/', methods=['POST'])
+@order_bp.route('/', methods=['POST'])
 @login_required
 def create_order():
     data = request.get_json()
@@ -36,7 +42,7 @@ def create_order():
     db.session.commit()
     return jsonify({'message': '주문 생성 완료', 'order_id': o.id}), 201
 
-@orders_bp.route('/<int:id>', methods=['PUT'])
+@order_bp.route('/<int:id>', methods=['PUT'])
 @login_required
 def update_order(id):
     o = Order.query.get_or_404(id)
@@ -48,14 +54,14 @@ def update_order(id):
     db.session.commit()
     return jsonify({'message': '주문 수정 완료'})
 
-@orders_bp.route('/<int:id>', methods=['DELETE'])
+@order_bp.route('/<int:id>', methods=['DELETE'])
 @login_required
 def delete_order(id):
     Order.query.filter_by(id=id).delete()
     db.session.commit()
     return jsonify({'message': '주문 삭제 완료'})
 
-@orders_bp.route('/orders')
+@order_bp.route('/orders')
 def order_list():
     """발주 목록 페이지"""
     try:
@@ -72,7 +78,7 @@ def order_list():
         logger.error(f"발주 목록 조회 중 오류 발생: {str(e)}")
         return render_template('error.html', error="발주 목록을 불러오는데 실패했습니다.")
 
-@orders_bp.route('/orders/create', methods=['GET', 'POST'])
+@order_bp.route('/orders/create', methods=['GET', 'POST'])
 def create_order_form():
     """발주 생성"""
     try:
@@ -116,7 +122,7 @@ def create_order_form():
         logger.error(f"발주 생성 중 오류 발생: {str(e)}")
         return jsonify({'error': '발주 등록에 실패했습니다.'}), 500
 
-@orders_bp.route('/orders/<int:order_id>/update', methods=['POST'])
+@order_bp.route('/orders/<int:order_id>/update', methods=['POST'])
 def update_order_status(order_id: int):
     """발주 상태 업데이트"""
     try:
@@ -147,7 +153,7 @@ def update_order_status(order_id: int):
         logger.error(f"발주 상태 업데이트 중 오류 발생: {str(e)}")
         return jsonify({'error': '발주 상태 업데이트에 실패했습니다.'}), 500
 
-@orders_bp.route('/orders/check')
+@order_bp.route('/orders/check')
 def check_orders():
     """발주 체크"""
     try:
@@ -174,7 +180,7 @@ def check_orders():
         logger.error(f"발주 체크 중 오류 발생: {str(e)}")
         return jsonify({'error': '발주 체크에 실패했습니다.'}), 500
 
-@orders_bp.route('/orders/statistics')
+@order_bp.route('/orders/statistics')
 def order_statistics():
     """발주 통계"""
     try:
@@ -214,7 +220,7 @@ def order_statistics():
         logger.error(f"발주 통계 조회 중 오류 발생: {str(e)}")
         return render_template('error.html', error="발주 통계를 불러오는데 실패했습니다.")
 
-@orders_bp.route('/orders/statistics/filter', methods=['POST'])
+@order_bp.route('/orders/statistics/filter', methods=['POST'])
 def filter_order_statistics():
     """기간별 발주 통계 필터링"""
     try:
@@ -268,4 +274,47 @@ def filter_order_statistics():
         
     except Exception as e:
         logger.error(f"발주 통계 필터링 중 오류 발생: {str(e)}")
-        return jsonify({'error': '통계 필터링에 실패했습니다.'}), 500 
+        return jsonify({'error': '통계 필터링에 실패했습니다.'}), 500
+
+@order_bp.route('/orders', methods=['GET', 'POST'])
+@login_required
+def manage_orders():
+    if request.method == 'POST':
+        try:
+            item_name = request.form['item_name']
+            category = request.form['category']
+            quantity = int(request.form['quantity'])
+            expected_date = datetime.strptime(request.form['expected_date'], '%Y-%m-%d')
+            supplier = request.form['supplier']
+
+            new_order = Order(
+                item_name=item_name,
+                category=category,
+                quantity=quantity,
+                expected_date=expected_date,
+                supplier=supplier
+            )
+            db.session.add(new_order)
+            db.session.commit()
+            flash('발주가 성공적으로 등록되었습니다.', 'success')
+            return redirect(url_for('orders.manage_orders'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'발주 등록 중 오류가 발생했습니다: {str(e)}', 'error')
+            return redirect(url_for('orders.manage_orders'))
+
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    return render_template('orders/order_list.html', orders=orders)
+
+@order_bp.route('/orders/<int:order_id>/delete', methods=['POST'])
+@login_required
+def remove_order(order_id):
+    try:
+        order = Order.query.get_or_404(order_id)
+        db.session.delete(order)
+        db.session.commit()
+        flash('발주가 성공적으로 삭제되었습니다.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'발주 삭제 중 오류가 발생했습니다: {str(e)}', 'error')
+    return redirect(url_for('orders.manage_orders')) 

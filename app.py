@@ -12,7 +12,11 @@ from typing import Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_migrate import Migrate
 from flask_login import LoginManager, current_user
-from models import User, Employee, Supplier, Order, OrderItem, InventoryItem
+from models.user import User
+from models.employee import Employee
+from models.supplier import Supplier
+from models.order import Order
+from models.inventory import InventoryItem
 from routes.auth import auth_bp, create_admin_user
 from routes.employee import employee_bp
 from routes.inventory import inventory_bp
@@ -22,6 +26,7 @@ from routes.main import main_bp
 from routes.suppliers import supplier_bp
 from routes.notification import notification_bp
 from routes.employees import employees_bp
+from routes.orders import order_bp
 from datetime import datetime, timedelta
 
 # 환경 변수 로드

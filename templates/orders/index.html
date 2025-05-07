@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-3">주문 관리</h2>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>주문일시</th>
+          <th>요청자</th>
+          <th>품목</th>
+          <th>수량</th>
+          <th>단가</th>
+          <th>총액</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ o.ordered_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ o.user.username }}</td>
+          <td>{{ o.item.name }}</td>
+          <td>{{ o.quantity }}</td>
+          <td>{{ "{:,.0f}".format(o.unit_price) }}원</td>
+          <td>{{ "{:,.0f}".format(o.total_price) }}원</td>
+          <td>
+            {% if o.status == '대기중' %}
+              <span class="badge bg-warning text-dark">대기중</span>
+            {% elif o.status == '발주완료' %}
+              <span class="badge bg-primary">발주완료</span>
+            {% elif o.status == '입고완료' %}
+              <span class="badge bg-success">입고완료</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ o.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center">등록된 주문이 없습니다.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} 

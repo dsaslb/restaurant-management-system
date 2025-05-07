@@ -14,6 +14,11 @@ class Order(db.Model):
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    item_name = db.Column(db.String(100), nullable=False)  # 품목 이름
+    category = db.Column(db.String(50))                    # 카테고리 (예: 식자재, 주방용품 등)
+    quantity = db.Column(db.Integer, nullable=False)       # 발주 수량
+    expected_date = db.Column(db.Date)                     # 입고 예정일
+    supplier = db.Column(db.String(100))                   # 업체명
 
     # 관계 설정
     user = db.relationship('User', back_populates='orders')
@@ -41,7 +46,7 @@ class Order(db.Model):
         return self.status == '대기중'
     
     def __repr__(self):
-        return f'<Order {self.id}: {self.status}>'
+        return f"<Order {self.item_name} - {self.quantity}>"
 
 class OrderItem(db.Model):
     """주문 항목 모델"""
@@ -58,7 +63,7 @@ class OrderItem(db.Model):
     
     # 관계 설정
     order = db.relationship('Order', back_populates='items')
-    item = db.relationship('InventoryItem')
+    item = db.relationship('InventoryItem', backref=db.backref('order_items', lazy=True))
 
     def __repr__(self):
-        return f'<OrderItem {self.id}>' 
+        return f"<OrderItem {self.item_id} - {self.quantity}>" 

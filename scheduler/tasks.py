@@ -3,13 +3,14 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, timedelta
 from flask import current_app
-from models.inventory import InventoryBatch
+from models.inventory import InventoryBatch, InventoryItem
 from models.notification import Notification
 from extensions import db
 import logging
 from utils.pos_service import sync_pos_sales
 from utils.inventory import check_inventory_status
 import pytz
+from models.order import Order
 
 logger = logging.getLogger(__name__)
 
@@ -45,62 +46,94 @@ def check_expiring_items():
         logger.error(f"유통기한 임박 재고 확인 중 오류 발생: {str(e)}")
         db.session.rollback()
 
-def init_scheduler(app_scheduler):
+def init_scheduler():
     """스케줄러 초기화"""
     global scheduler
-    scheduler = app_scheduler
-    
-    try:
-        # POS 판매 데이터 동기화 (5분마다)
-        scheduler.add_job(
-            sync_pos_sales,
-            trigger=IntervalTrigger(minutes=5, timezone=pytz.timezone('Asia/Seoul')),
-            id='sync_pos_sales',
-            name='POS 판매 데이터 동기화',
-            replace_existing=True
-        )
-        
-        # 재고 상태 확인 (매일 오전 9시)
-        scheduler.add_job(
-            check_inventory_status,
-            trigger=CronTrigger(hour=9, timezone=pytz.timezone('Asia/Seoul')),
-            id='check_inventory',
-            name='재고 상태 확인',
-            replace_existing=True
-        )
-        
-        logger.info('스케줄러가 초기화되었습니다.')
-    except Exception as e:
-        logger.error(f'스케줄러 초기화 중 오류 발생: {str(e)}')
-        raise
+    if scheduler is None:
+        scheduler = BackgroundScheduler()
+        scheduler.start()
+        logger.info('스케줄러가 시작되었습니다.')
 
 def get_scheduler_status():
-    """스케줄러 상태 조회"""
+    """스케줄러 상태 확인"""
+    global scheduler
     if scheduler is None:
-        return {
-            'status': 'not_initialized',
-            'jobs': []
-        }
-    
+        return '스케줄러가 초기화되지 않았습니다.'
+    return '스케줄러가 실행 중입니다.' if scheduler.running else '스케줄러가 중지되었습니다.'
+
+def check_inventory_levels():
+    """재고 수준 확인"""
     try:
-        jobs = []
-        for job in scheduler.get_jobs():
-            jobs.append({
-                'id': job.id,
-                'name': job.name,
-                'next_run_time': job.next_run_time.strftime('%Y-%m-%d %H:%M:%S') if job.next_run_time else None,
-                'trigger': str(job.trigger)
-            })
-        
-        return {
-            'status': 'running' if scheduler.running else 'stopped',
-            'jobs': jobs
-        }
+        items = InventoryItem.query.all()
+        for item in items:
+            if item.current_quantity <= item.minimum_quantity:
+                notification = Notification(
+                    title='재고 부족 알림',
+                    message=f'{item.name}의 재고가 부족합니다. 현재 수량: {item.current_quantity}',
+                    type='inventory_alert',
+                    status='unread'
+                )
+                db.session.add(notification)
+        db.session.commit()
+        logger.info('재고 수준 확인이 완료되었습니다.')
     except Exception as e:
-        logger.error(f'스케줄러 상태 조회 중 오류 발생: {str(e)}')
-        return {
-            'status': 'error',
-            'error': str(e)
-        }
+        logger.error(f'재고 수준 확인 중 오류 발생: {str(e)}')
+
+def check_expiring_batches():
+    """유통기한 임박 재고 확인"""
+    try:
+        today = datetime.utcnow().date()
+        expiring_soon = today + timedelta(days=7)
+        batches = InventoryBatch.query.filter(
+            InventoryBatch.expiry_date <= expiring_soon,
+            InventoryBatch.expiry_date >= today
+        ).all()
+
+        for batch in batches:
+            notification = Notification(
+                title='유통기한 임박 알림',
+                message=f'{batch.item.name}의 유통기한이 {batch.expiry_date}에 만료됩니다.',
+                type='expiry_alert',
+                status='unread'
+            )
+            db.session.add(notification)
+        db.session.commit()
+        logger.info('유통기한 확인이 완료되었습니다.')
+    except Exception as e:
+        logger.error(f'유통기한 확인 중 오류 발생: {str(e)}')
+
+def check_pending_orders():
+    """미처리 주문 확인"""
+    try:
+        orders = Order.query.filter_by(status='pending').all()
+        for order in orders:
+            notification = Notification(
+                title='미처리 주문 알림',
+                message=f'주문 #{order.id}가 처리 대기 중입니다.',
+                type='order_alert',
+                status='unread'
+            )
+            db.session.add(notification)
+        db.session.commit()
+        logger.info('미처리 주문 확인이 완료되었습니다.')
+    except Exception as e:
+        logger.error(f'미처리 주문 확인 중 오류 발생: {str(e)}')
+
+def schedule_tasks():
+    """작업 스케줄링"""
+    global scheduler
+    if scheduler is None:
+        init_scheduler()
+
+    # 재고 수준 확인 - 매일 오전 9시
+    scheduler.add_job(check_inventory_levels, 'cron', hour=9)
+
+    # 유통기한 확인 - 매일 오전 10시
+    scheduler.add_job(check_expiring_batches, 'cron', hour=10)
+
+    # 미처리 주문 확인 - 매 시간마다
+    scheduler.add_job(check_pending_orders, 'interval', hours=1)
+
+    logger.info('모든 작업이 스케줄링되었습니다.')
 
 
