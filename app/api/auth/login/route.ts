@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server"
+import { compare } from "bcryptjs"
+import { readFile } from "fs/promises"
+import { existsSync } from "fs"
+import path from "path"
 import { sign } from "jsonwebtoken"
 import { cookies } from "next/headers"
 
+const USER_DATA_FILE = path.join(process.cwd(), "data", "users.json")
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
 
 export async function POST(request: Request) {
@@ -9,31 +14,38 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { username, password } = body
 
-    // TODO: 실제 데이터베이스에서 사용자 확인
-    // 현재는 임시로 하드코딩된 사용자 정보 사용
-    const users = {
-      "admin": {
-        password: "admin123", // 실제로는 해시된 비밀번호를 사용해야 합니다
-        role: "admin"
-      }
+    if (!existsSync(USER_DATA_FILE)) {
+      return NextResponse.json(
+        { error: "사용자 데이터를 찾을 수 없습니다" },
+        { status: 404 }
+      )
     }
 
-    const user = users[username]
-    if (!user || user.password !== password) {
+    const data = await readFile(USER_DATA_FILE, "utf-8")
+    const users = JSON.parse(data)
+
+    if (!users[username]) {
       return NextResponse.json(
-        { error: "잘못된 사용자 이름 또는 비밀번호입니다" },
+        { error: "아이디 또는 비밀번호가 올바르지 않습니다" },
         { status: 401 }
       )
     }
 
-    // JWT 토큰 생성
+    const isValid = await compare(password, users[username].password)
+    if (!isValid) {
+      return NextResponse.json(
+        { error: "아이디 또는 비밀번호가 올바르지 않습니다" },
+        { status: 401 }
+      )
+    }
+
+    const role = users[username].role || "staff"
     const token = sign(
-      { username, role: user.role },
+      { username, role },
       JWT_SECRET,
       { expiresIn: "2h" }
     )
 
-    // 쿠키에 토큰 저장
     cookies().set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -41,7 +53,7 @@ export async function POST(request: Request) {
       maxAge: 2 * 60 * 60 // 2시간
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, role })
   } catch (error) {
     console.error("로그인 처리 중 오류 발생:", error)
     return NextResponse.json(

@@ -5,7 +5,7 @@ from models.attendance import Attendance
 from fpdf import FPDF
 import json
 import os
-from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from database import Base
 

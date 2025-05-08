@@ -1,0 +1,10 @@
+{
+  "admin": {
+    "password": "$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX",
+    "role": "admin",
+    "info": {
+      "name": "관리자",
+      "address": "서울시"
+    }
+  }
+} 

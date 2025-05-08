@@ -11,4 +11,20 @@ export const attendanceSchema = z.object({
   note: z.string().optional(),
 })
 
-export type Attendance = z.infer<typeof attendanceSchema> 
+export type Attendance = z.infer<typeof attendanceSchema>
+
+export interface AttendanceStats {
+  totalDays: number
+  presentDays: number
+  absentDays: number
+  lateDays: number
+  earlyDays: number
+  averageWorkHours: number
+}
+
+export interface AttendanceFilter {
+  userId?: string
+  startDate?: string
+  endDate?: string
+  status?: Attendance['status']
+} 

@@ -12,10 +12,17 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 import Link from "next/link"
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -26,33 +33,34 @@ export default function LoginPage() {
     const formData = new FormData(event.currentTarget)
     const username = formData.get("username") as string
     const password = formData.get("password") as string
+    const confirmPassword = formData.get("confirmPassword") as string
+    const role = formData.get("role") as string
+
+    if (password !== confirmPassword) {
+      toast.error("비밀번호가 일치하지 않습니다")
+      setIsLoading(false)
+      return
+    }
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, role }),
       })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || "로그인에 실패했습니다")
+        throw new Error(data.error || "회원가입에 실패했습니다")
       }
 
-      const data = await response.json()
-      toast.success("로그인되었습니다")
-      
-      // 역할에 따라 다른 페이지로 리다이렉트
-      if (data.role === "admin") {
-        router.push("/admin")
-      } else {
-        router.push("/")
-      }
+      toast.success("회원가입이 완료되었습니다")
+      router.push("/login")
     } catch (error) {
-      console.error("로그인 실패:", error)
-      toast.error(error instanceof Error ? error.message : "로그인에 실패했습니다")
+      console.error("회원가입 실패:", error)
+      toast.error(error instanceof Error ? error.message : "회원가입에 실패했습니다")
     } finally {
       setIsLoading(false)
     }
@@ -62,9 +70,9 @@ export default function LoginPage() {
     <div className="container flex items-center justify-center min-h-screen py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>로그인</CardTitle>
+          <CardTitle>회원가입</CardTitle>
           <CardDescription>
-            식당 관리 시스템에 로그인하세요
+            식당 관리 시스템에 가입하세요
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -89,13 +97,35 @@ export default function LoginPage() {
                 disabled={isLoading}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">역할</Label>
+              <Select name="role" defaultValue="staff">
+                <SelectTrigger>
+                  <SelectValue placeholder="역할을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">관리자</SelectItem>
+                  <SelectItem value="staff">직원</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "로그인 중..." : "로그인"}
+              {isLoading ? "가입 중..." : "회원가입"}
             </Button>
             <div className="text-center text-sm">
-              계정이 없으신가요?{" "}
-              <Link href="/register" className="text-primary hover:underline">
-                회원가입
+              이미 계정이 있으신가요?{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                로그인
               </Link>
             </div>
           </form>
