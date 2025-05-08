@@ -12,15 +12,37 @@ from typing import Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_migrate import Migrate
 from flask_login import LoginManager, current_user
-from models.user import User
-from models.employee import Employee
-from models.supplier import Supplier
-from models.order import Order
-from models.inventory import InventoryItem
+from utils.logger import setup_logger
+
+from models import (
+    User,
+    Employee,
+    Supplier,
+    Order,
+    OrderItem,
+    ProductCategory,
+    InventoryStatus,
+    InventoryItem,
+    InventoryBatch,
+    Ingredient,
+    StockItem,
+    StockTransaction,
+    StockUsageAlert,
+    Inventory,
+    Disposal,
+    Schedule,
+    ScheduleHistory,
+    Notification,
+    AlertLog,
+    Attendance,
+    Contract,
+    ContractTemplate,
+)
+
 from routes.auth import auth_bp, create_admin_user
 from routes.employee import employee_bp
 from routes.inventory import inventory_bp
-from routes.order import bp as order_bp
+from routes.order import order_bp
 from routes.schedule import schedule_bp
 from routes.main import main_bp
 from routes.suppliers import supplier_bp
@@ -28,9 +50,17 @@ from routes.notification import notification_bp
 from routes.employees import employees_bp
 from routes.orders import order_bp
 from datetime import datetime, timedelta
+from routes.contracts import contract_bp
+from routes.attendance import attendance_bp
+from routes.admin import admin_bp
+from routes.staff import staff_bp
 
 # 환경 변수 로드
 load_dotenv()
+
+# 앱 인스턴스 생성
+app = Flask(__name__)
+app.config.from_object(Config)
 
 # 로깅 설정
 if not os.path.exists('logs'):
@@ -51,14 +81,7 @@ console_handler.setFormatter(logging.Formatter(
 console_handler.setLevel(logging.INFO)
 
 # 루트 로거 설정
-logger = logging.getLogger()
-logger.addHandler(file_handler)
-logger.addHandler(console_handler)
-logger.setLevel(logging.INFO)
-
-# 앱 인스턴스 생성
-app = Flask(__name__)
-app.config.from_object(Config)
+logger = setup_logger('restaurant_system')  # 문자열 이름을 전달
 
 # 템플릿 자동 리로드 설정
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -76,11 +99,13 @@ CORS(app)
 
 # 데이터베이스 초기화
 db.init_app(app)
-migrate.init_app(app, db)
+migrate = Migrate(app, db)
 
 # 로그인 매니저 초기화
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
+login_manager.login_message = '이 페이지에 접근하려면 로그인이 필요합니다.'
+login_manager.login_message_category = 'info'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -192,11 +217,14 @@ def create_sample_data():
             employee = Employee(
                 user_id=user.id,
                 name=emp_data['name'],
+                email=emp_data['email'],
                 position=emp_data['position'],
                 phone=emp_data['phone'],
                 hire_date=emp_data['hire_date']
             )
             db.session.add(employee)
+    
+    db.session.commit()
     
     # 공급업체 생성
     suppliers = [
@@ -329,7 +357,10 @@ def create_sample_data():
             supplier_id=supplier.id,
             status='대기중',
             order_date=datetime.now(),
-            delivery_date=datetime.now() + timedelta(days=1)
+            delivery_date=datetime.now() + timedelta(days=1),
+            item_name='쌀',
+            category='식자재',
+            quantity=100
         )
         db.session.add(order1)
         db.session.flush()
@@ -340,7 +371,10 @@ def create_sample_data():
             supplier_id=2,  # 건어물상사
             status='승인됨',
             order_date=datetime.now() - timedelta(days=1),
-            delivery_date=datetime.now() + timedelta(days=1)
+            delivery_date=datetime.now() + timedelta(days=1),
+            item_name='고등어',
+            category='수산물',
+            quantity=50
         )
         db.session.add(order2)
         db.session.flush()
@@ -371,10 +405,9 @@ def create_sample_data():
 # 메인 페이지 라우트
 @app.route('/')
 def index():
-    """메인 페이지"""
-    if not current_user.is_authenticated:
-        return redirect(url_for('auth.login'))
-    return render_template('index.html')
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('auth.login'))
 
 # 블루프린트 등록
 app.register_blueprint(auth_bp)
@@ -386,6 +419,10 @@ app.register_blueprint(order_bp)
 app.register_blueprint(schedule_bp)
 app.register_blueprint(notification_bp)
 app.register_blueprint(employees_bp)
+app.register_blueprint(contract_bp, url_prefix='/contracts')
+app.register_blueprint(attendance_bp, url_prefix='/attendance')
+app.register_blueprint(admin_bp)
+app.register_blueprint(staff_bp)
 
 # 스케줄러 초기화
 scheduler = BackgroundScheduler()

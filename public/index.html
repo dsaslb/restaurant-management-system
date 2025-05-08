@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레스토랑 관리 시스템</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>레스토랑 관리 시스템</h1>
+            <nav>
+                <ul>
+                    <li><a href="/">홈</a></li>
+                    <li><a href="/employees">직원 관리</a></li>
+                    <li><a href="/inventory">재고 관리</a></li>
+                    <li><a href="/orders">발주 관리</a></li>
+                    <li><a href="/schedule">스케줄 관리</a></li>
+                </ul>
+            </nav>
+        </header>
+        
+        <main>
+            <section class="welcome">
+                <h2>환영합니다!</h2>
+                <p>레스토랑 관리 시스템에 오신 것을 환영합니다.</p>
+            </section>
+            
+            <section class="quick-stats">
+                <div class="stat-card">
+                    <h3>직원 현황</h3>
+                    <p>총 직원 수: <span id="employee-count">0</span>명</p>
+                </div>
+                <div class="stat-card">
+                    <h3>재고 현황</h3>
+                    <p>부족 재고: <span id="low-stock-count">0</span>개</p>
+                </div>
+                <div class="stat-card">
+                    <h3>발주 현황</h3>
+                    <p>대기 중인 발주: <span id="pending-orders">0</span>건</p>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2024 레스토랑 관리 시스템. All rights reserved.</p>
+        </footer>
+    </div>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html> 

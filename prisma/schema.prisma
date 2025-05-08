@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id              String       @id @default(cuid())
+  name            String
+  position        String
+  email           String       @unique
+  phone           String
+  hireDate        DateTime
+  status          String
+  employmentType  String
+  salary          Float
+  bankAccount     String
+  emergencyContact String
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  attendance      Attendance[]
+  orders          Order[]
+}
+
+model Attendance {
+  id         String   @id @default(cuid())
+  employeeId String
+  date       DateTime
+  checkIn    DateTime
+  checkOut   DateTime?
+  status     String
+  workHours  Float?
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  employee   Employee @relation(fields: [employeeId], references: [id])
+}
+
+model Menu {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  price           Float
+  category        String
+  image           String?
+  isAvailable     Boolean  @default(true)
+  ingredients     String[]
+  allergens       String[]
+  preparationTime Int
+  calories        Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  orderItems      OrderItem[]
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  tableNumber   Int
+  items         OrderItem[]
+  status        String
+  totalAmount   Float
+  paymentMethod String?
+  paymentStatus String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  servedBy      String
+  notes         String?
+  employee      Employee    @relation(fields: [servedBy], references: [id])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  menuId    String
+  quantity  Int
+  price     Float
+  notes     String?
+  order     Order    @relation(fields: [orderId], references: [id])
+  menu      Menu     @relation(fields: [menuId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+} 

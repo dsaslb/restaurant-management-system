@@ -330,50 +330,46 @@ def get_inventory_batch(batch_number: str) -> Optional[dict]:
 def check_inventory_status():
     """재고 상태 확인"""
     try:
-        # 재고 부족 상태 확인
-        low_stock_items = Inventory.query.filter_by(status='부족').all()
-        for item in low_stock_items:
-            alert = StockUsageAlert(
-                item_id=item.id,
-                alert_type='low_stock',
-                message=f'{item.name}의 재고가 부족합니다. 현재 수량: {item.quantity}{item.unit}'
-            )
-            db.session.add(alert)
-            
-            # 관리자에게 알림 전송
-            send_notification(
-                title='재고 부족 알림',
-                message=f'{item.name}의 재고가 부족합니다.\n현재 수량: {item.quantity}{item.unit}',
-                level='warning'
-            )
-        
-        # 유통기한 임박 상태 확인 (7일 이내)
-        expiring_soon = datetime.now() + timedelta(days=7)
-        expiring_items = Inventory.query.filter(
-            Inventory.expiration_date <= expiring_soon,
-            Inventory.expiration_date > datetime.now(),
-            Inventory.is_disposed == False
+        # 재고 수준 확인
+        low_stock_items = InventoryItem.query.filter(
+            InventoryItem.current_quantity <= InventoryItem.minimum_quantity
         ).all()
         
-        for item in expiring_items:
-            days_left = (item.expiration_date - datetime.now()).days
-            alert = StockUsageAlert(
-                item_id=item.id,
-                alert_type='expiring_soon',
-                message=f'{item.name}의 유통기한이 {days_left}일 남았습니다.'
+        for item in low_stock_items:
+            notification = Notification(
+                title="재고 부족 알림",
+                message=f"{item.name}의 재고가 부족합니다. 현재 수량: {item.current_quantity}",
+                type="warning",
+                status="unread"
             )
-            db.session.add(alert)
-            
-            # 관리자에게 알림 전송
-            send_notification(
-                title='유통기한 임박 알림',
-                message=f'{item.name}의 유통기한이 {days_left}일 남았습니다.',
-                level='warning'
+            db.session.add(notification)
+        
+        # 유통기한 임박 재고 확인
+        today = datetime.now().date()
+        warning_threshold = today + timedelta(days=7)
+        
+        expiring_batches = InventoryBatch.query.filter(
+            InventoryBatch.expiry_date <= warning_threshold,
+            InventoryBatch.expiry_date > today
+        ).all()
+        
+        for batch in expiring_batches:
+            notification = Notification(
+                title="유통기한 임박 알림",
+                message=f"{batch.item.name}의 유통기한이 {batch.expiry_date}까지 남았습니다.",
+                type="warning",
+                status="unread"
             )
+            db.session.add(notification)
         
         db.session.commit()
-        logger.info('재고 상태 확인이 완료되었습니다.')
+        logger.info(f"재고 상태 확인 완료: {len(low_stock_items)}개 부족, {len(expiring_batches)}개 유통기한 임박")
+        
+        return {
+            'low_stock_count': len(low_stock_items),
+            'expiring_count': len(expiring_batches)
+        }
     except Exception as e:
-        logger.error(f'재고 상태 확인 중 오류 발생: {str(e)}')
+        logger.error(f"재고 상태 확인 중 오류 발생: {str(e)}")
         db.session.rollback()
-        raise 
+        return None 

@@ -26,4 +26,5 @@ email-validator==2.1.0.post1
 pandas==2.0.3
 xlsxwriter==3.1.0
 reportlab==4.1.0
-cryptography==42.0.2 
+cryptography==42.0.2
+typing-extensions==4.7.1 

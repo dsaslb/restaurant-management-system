@@ -7,13 +7,14 @@ class Schedule(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
-    start_time = db.Column(db.DateTime, nullable=False)
-    end_time = db.Column(db.DateTime, nullable=False)
-    work_type = db.Column(db.String(50), nullable=False)  # 정규, 특근, 휴가 등
-    status = db.Column(db.String(20), default='대기중')  # 대기중, 승인, 거절
+    date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    break_time = db.Column(db.Integer)  # 휴게시간(분)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, completed
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    date = db.Column(db.Date, nullable=False, default=lambda: datetime.utcnow().date())
+    work_type = db.Column(db.String(50), nullable=False)  # 정규, 특근, 휴가 등
     is_approved = db.Column(db.Boolean, default=False)  # 승인 여부를 저장하는 속성 추가
 
     # 관계 설정
@@ -21,7 +22,7 @@ class Schedule(db.Model):
     history = db.relationship('ScheduleHistory', back_populates='schedule', cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f'<Schedule {self.id}>'
+        return f'<Schedule {self.employee_id} - {self.date}>'
 
 class ScheduleHistory(db.Model):
     """일정 이력 모델"""

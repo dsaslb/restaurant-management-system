@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📦 새 발주 등록</h2>
+        <a href="{{ url_for('order.order_list') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 목록으로
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" id="orderForm">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="supplier_id" class="form-label">공급업체</label>
+                        <select name="supplier_id" id="supplier_id" class="form-select" required>
+                            <option value="">선택하세요</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="delivery_date" class="form-label">입고 예정일</label>
+                        <input type="date" name="delivery_date" id="delivery_date" 
+                               class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">발주 품목</label>
+                    <div id="orderItems">
+                        <div class="row mb-2 order-item">
+                            <div class="col-md-5">
+                                <select name="item_id[]" class="form-select" required>
+                                    <option value="">품목 선택</option>
+                                    {% for item in inventory_items %}
+                                    <option value="{{ item.id }}" 
+                                            data-price="{{ item.unit_price }}">
+                                        {{ item.name }} ({{ item.unit_price }}원/{{ item.unit }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" name="quantity[]" class="form-control" 
+                                       placeholder="수량" min="1" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control item-total" 
+                                       placeholder="금액" readonly>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-danger remove-item">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary mt-2" id="addItem">
+                        <i class="fas fa-plus"></i> 품목 추가
+                    </button>
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">비고</label>
+                    <textarea name="notes" id="notes" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 발주 등록
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderItems = document.getElementById('orderItems');
+    const addItemBtn = document.getElementById('addItem');
+    const orderForm = document.getElementById('orderForm');
+
+    // 품목 추가
+    addItemBtn.addEventListener('click', function() {
+        const firstItem = orderItems.querySelector('.order-item');
+        const newItem = firstItem.cloneNode(true);
+        newItem.querySelectorAll('input, select').forEach(input => input.value = '');
+        orderItems.appendChild(newItem);
+        setupItemListeners(newItem);
+    });
+
+    // 품목 제거
+    function setupItemListeners(item) {
+        item.querySelector('.remove-item').addEventListener('click', function() {
+            if (orderItems.querySelectorAll('.order-item').length > 1) {
+                item.remove();
+            }
+        });
+
+        // 금액 계산
+        const quantityInput = item.querySelector('input[name="quantity[]"]');
+        const itemSelect = item.querySelector('select[name="item_id[]"]');
+        const totalInput = item.querySelector('.item-total');
+
+        function updateTotal() {
+            const quantity = parseInt(quantityInput.value) || 0;
+            const price = parseFloat(itemSelect.selectedOptions[0]?.dataset.price) || 0;
+            const total = quantity * price;
+            totalInput.value = total.toLocaleString() + '원';
+        }
+
+        quantityInput.addEventListener('input', updateTotal);
+        itemSelect.addEventListener('change', updateTotal);
+    }
+
+    // 초기 품목에 이벤트 리스너 설정
+    document.querySelectorAll('.order-item').forEach(setupItemListeners);
+
+    // 폼 제출 전 유효성 검사
+    orderForm.addEventListener('submit', function(e) {
+        const items = orderItems.querySelectorAll('.order-item');
+        let hasValidItem = false;
+
+        items.forEach(item => {
+            const itemId = item.querySelector('select[name="item_id[]"]').value;
+            const quantity = item.querySelector('input[name="quantity[]"]').value;
+            if (itemId && quantity) {
+                hasValidItem = true;
+            }
+        });
+
+        if (!hasValidItem) {
+            e.preventDefault();
+            alert('최소 하나 이상의 품목을 입력해주세요.');
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

@@ -5,7 +5,7 @@ from datetime import datetime
 
 class User(UserMixin, db.Model):
     """사용자 모델"""
-    __tablename__ = 'user'
+    __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -18,9 +18,10 @@ class User(UserMixin, db.Model):
     
     # 관계 설정
     employee = db.relationship('Employee', back_populates='user', uselist=False)
-    orders = db.relationship('Order', back_populates='user')
+    orders = db.relationship('Order', back_populates='user', lazy=True)
     schedule_history = db.relationship('ScheduleHistory', back_populates='user')
     notifications = db.relationship('Notification', back_populates='user')
+    evaluations = db.relationship('WorkEvaluation', back_populates='evaluator', lazy=True)
     
     @property
     def is_admin(self):

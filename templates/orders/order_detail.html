@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📦 발주 상세</h2>
+        <div>
+            <a href="{{ url_for('order.order_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 목록으로
+            </a>
+            {% if order.can_cancel() %}
+            <form action="{{ url_for('order.cancel_order', order_id=order.id) }}" 
+                  method="POST" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger"
+                        onclick="return confirm('정말 취소하시겠습니까?')">
+                    <i class="fas fa-times"></i> 발주 취소
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">발주 정보</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>발주번호:</strong></p>
+                            <p>{{ order.id }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>상태:</strong></p>
+                            <p>
+                                <span class="badge bg-{{ {
+                                    'pending': 'warning',
+                                    'approved': 'info',
+                                    'completed': 'success',
+                                    'cancelled': 'danger'
+                                }.get(order.status, 'secondary') }}">
+                                    {{ {
+                                        'pending': '대기중',
+                                        'approved': '승인됨',
+                                        'completed': '완료',
+                                        'cancelled': '취소됨'
+                                    }.get(order.status, order.status) }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>공급업체:</strong></p>
+                            <p>{{ order.supplier.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>발주일:</strong></p>
+                            <p>{{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>입고 예정일:</strong></p>
+                            <p>{{ order.delivery_date.strftime('%Y-%m-%d') if order.delivery_date else '-' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>총액:</strong></p>
+                            <p>{{ "{:,}".format(order.total_amount) }}원</p>
+                        </div>
+                    </div>
+                    {% if order.notes %}
+                    <div class="row">
+                        <div class="col-12">
+                            <p class="mb-1"><strong>비고:</strong></p>
+                            <p>{{ order.notes }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">발주 품목</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>품목명</th>
+                                    <th>수량</th>
+                                    <th>단가</th>
+                                    <th>금액</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr>
+                                    <td>{{ item.item.name }}</td>
+                                    <td>{{ item.quantity }}{{ item.item.unit }}</td>
+                                    <td>{{ "{:,}".format(item.unit_price) }}원</td>
+                                    <td>{{ "{:,}".format(item.total_price) }}원</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3" class="text-end">총계:</th>
+                                    <th>{{ "{:,}".format(order.total_amount) }}원</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">상태 변경</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('order.update_order_status', order_id=order.id) }}" 
+                          method="POST">
+                        <div class="mb-3">
+                            <label for="status" class="form-label">상태</label>
+                            <select name="status" id="status" class="form-select" 
+                                    {% if not order.can_update() %}disabled{% endif %}>
+                                <option value="pending" 
+                                        {% if order.status == 'pending' %}selected{% endif %}>
+                                    대기중
+                                </option>
+                                <option value="approved" 
+                                        {% if order.status == 'approved' %}selected{% endif %}>
+                                    승인됨
+                                </option>
+                                <option value="completed" 
+                                        {% if order.status == 'completed' %}selected{% endif %}>
+                                    완료
+                                </option>
+                            </select>
+                        </div>
+                        {% if order.can_update() %}
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> 상태 변경
+                        </button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

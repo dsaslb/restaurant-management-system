@@ -2,7 +2,12 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">📦 발주 관리</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📦 발주 관리</h2>
+        <a href="{{ url_for('order.create_order') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 새 발주
+        </a>
+    </div>
 
     <!-- 알림 메시지 표시 -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -49,31 +54,64 @@
 
     <!-- 발주 목록 -->
     <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">📝 발주 목록</h5>
-        </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>품목명</th>
-                            <th>카테고리</th>
-                            <th>수량</th>
-                            <th>업체명</th>
-                            <th>입고 예정일</th>
-                            <th>등록일</th>
+                            <th>발주번호</th>
+                            <th>공급업체</th>
+                            <th>발주일</th>
+                            <th>입고예정일</th>
+                            <th>총액</th>
+                            <th>상태</th>
+                            <th>작업</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for order in orders %}
                         <tr>
-                            <td>{{ order.item_name }}</td>
-                            <td>{{ order.category }}</td>
-                            <td>{{ order.quantity }}</td>
-                            <td>{{ order.supplier }}</td>
-                            <td>{{ order.expected_date.strftime('%Y-%m-%d') }}</td>
-                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.supplier.name }}</td>
+                            <td>{{ order.order_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ order.delivery_date.strftime('%Y-%m-%d') if order.delivery_date else '-' }}</td>
+                            <td>{{ "{:,}".format(order.total_amount) }}원</td>
+                            <td>
+                                <span class="badge bg-{{ {
+                                    'pending': 'warning',
+                                    'approved': 'info',
+                                    'completed': 'success',
+                                    'cancelled': 'danger'
+                                }.get(order.status, 'secondary') }}">
+                                    {{ {
+                                        'pending': '대기중',
+                                        'approved': '승인됨',
+                                        'completed': '완료',
+                                        'cancelled': '취소됨'
+                                    }.get(order.status, order.status) }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('order.view_order', order_id=order.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if order.can_cancel() %}
+                                    <form action="{{ url_for('order.cancel_order', order_id=order.id) }}" 
+                                          method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('정말 취소하시겠습니까?')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">발주 내역이 없습니다.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

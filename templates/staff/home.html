@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>내 근무 스케줄</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+  <div class="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow">
+    <h2 class="text-xl font-bold mb-4">오늘의 스케줄</h2>
+
+    <div class="bg-blue-50 p-4 rounded mb-3">
+      <p class="text-sm text-blue-900">출근: <strong>오전 9:00</strong></p>
+      <p class="text-sm text-blue-900">퇴근: <strong>오후 6:00</strong></p>
+    </div>
+
+    <button onclick="checkOut()"
+            class="w-full py-2 bg-green-500 hover:bg-green-600 text-white rounded">
+      퇴근 완료
+    </button>
+  </div>
+
+  <script>
+    function checkOut() {
+      Swal.fire({
+        icon: 'success',
+        title: '퇴근 완료!',
+        text: '수고하셨습니다.',
+        confirmButtonText: '확인'
+      });
+    }
+  </script>
+
+</body>
+</html> 

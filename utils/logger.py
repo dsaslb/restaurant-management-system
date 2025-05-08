@@ -1,57 +1,58 @@
 import logging
 import os
-from logging.handlers import RotatingFileHandler
+from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from typing import Optional
+from flask import has_request_context, request, current_app
 
-def setup_logger(
-    name: str,
-    log_file: str = 'logs/server.log',
-    level: int = logging.INFO,
-    max_bytes: int = 10 * 1024 * 1024,  # 10MB
-    backup_count: int = 5
-) -> logging.Logger:
-    """
-    로거를 설정하고 반환합니다.
+class RequestFormatter(logging.Formatter):
+    """요청 컨텍스트를 포함하는 로그 포맷터"""
     
-    Args:
-        name: 로거 이름
-        log_file: 로그 파일 경로
-        level: 로깅 레벨
-        max_bytes: 최대 파일 크기
-        backup_count: 백업 파일 수
-        
-    Returns:
-        logging.Logger: 설정된 로거
-    """
-    # 로그 디렉토리 생성
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    
-    # 로거 생성
+    def format(self, record):
+        if has_request_context():
+            record.url = request.url
+            record.remote_addr = request.remote_addr
+            record.method = request.method
+        else:
+            record.url = None
+            record.remote_addr = None
+            record.method = None
+            
+        return super().format(record)
+
+def setup_logger(name):
+    """로거 설정"""
     logger = logging.getLogger(name)
-    logger.setLevel(level)
-    
-    # 포맷터 설정
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    
+    logger.setLevel(logging.INFO)
+
+    # 로그 디렉토리 생성
+    log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs')
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
     # 파일 핸들러 설정
+    log_file = os.path.join(log_dir, f'{name}.log')
     file_handler = RotatingFileHandler(
         log_file,
-        maxBytes=max_bytes,
-        backupCount=backup_count
+        maxBytes=10240,
+        backupCount=10
     )
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)
-    
+
     # 콘솔 핸들러 설정
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
+    console_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s'
+    ))
+    console_handler.setLevel(logging.INFO)
     logger.addHandler(console_handler)
-    
+
     return logger
 
-# 전역 로거 인스턴스
+# 전역 로거 인스턴스 생성
 logger = setup_logger('restaurant_system')
 
 def log_request(logger: logging.Logger, request_data: dict, response_data: dict, duration: float):

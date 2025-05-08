@@ -11,100 +11,15 @@ from scheduler.low_stock_notifier import notify_low_stock
 import logging
 import os
 
-admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+admin_bp = Blueprint('admin', __name__, url_prefix='/dashboard')
 logger = logging.getLogger(__name__)
 
-@admin_bp.route('/admin/dashboard')
+@admin_bp.route('/')
 @login_required
-@admin_required
 def dashboard():
-    """관리자 대시보드"""
-    try:
-        # 기간 설정
-        today = datetime.now().date()
-        first_day = today.replace(day=1)
-        
-        # 매장 ID (필요한 경우)
-        store_id = request.args.get('store_id', type=int)
-        
-        # 이번 달 총 근무시간
-        hours_result = Attendance.query.with_entities(
-            func.sum(func.strftime('%s', Attendance.clock_out) - func.strftime('%s', Attendance.clock_in))
-        ).filter(
-            Attendance.clock_in != None,
-            Attendance.clock_out != None,
-            Attendance.work_date >= first_day,
-            Attendance.work_date <= today
-        ).scalar()
-        total_hours = round((hours_result or 0) / 3600, 2)
-        
-        # 이번 달 총 급여
-        contracts = Contract.query.all()
-        total_pay = 0
-        for contract in contracts:
-            emp_id = contract.employee_id
-            hours = Attendance.query.filter_by(employee_id=emp_id).filter(
-                Attendance.work_date >= first_day,
-                Attendance.work_date <= today,
-                Attendance.clock_in != None,
-                Attendance.clock_out != None
-            ).all()
-            total_minutes = sum([(a.clock_out - a.clock_in).total_seconds() / 60 for a in hours])
-            worked_hours = total_minutes / 60
-            
-            if contract.pay_type == '시급제':
-                total_pay += contract.wage * worked_hours
-            elif contract.pay_type == '주급제':
-                total_pay += contract.wage * (worked_hours / 40)
-            elif contract.pay_type == '월급제':
-                total_pay += contract.wage
-        
-        # 스케줄 미확인 인원
-        unconfirmed_count = Schedule.query.filter_by(confirmed=False).count()
-        
-        # 계약 만료 임박 직원 조회
-        expiring_contracts = Contract.query.filter(
-            and_(
-                Contract.end_date <= today + timedelta(days=7),
-                Contract.end_date >= today
-            )
-        ).all()
-        
-        # 보건증 만료 임박 직원 조회
-        health_expiring = Employee.query.filter(
-            and_(
-                Employee.health_expire <= today + timedelta(days=7),
-                Employee.health_expire >= today
-            )
-        ).all()
-        
-        # 최근 평가 3건
-        recent_evaluations = WorkEvaluation.query.order_by(
-            WorkEvaluation.submitted_at.desc()
-        ).limit(3).all()
-        
-        # 알림 목록 조회
-        notifications = Notification.query.filter_by(
-            recipient_id=current_user.id,
-            is_read=False
-        ).order_by(Notification.created_at.desc()).limit(5).all()
-        
-        return render_template(
-            'admin/dashboard.html',
-            total_hours=total_hours,
-            total_pay=round(total_pay),
-            unconfirmed_count=unconfirmed_count,
-            expiring_contracts=expiring_contracts,
-            health_expiring=health_expiring,
-            recent_evaluations=recent_evaluations,
-            notifications=notifications,
-            start_date=first_day,
-            end_date=today,
-            store_id=store_id
-        )
-        
-    except Exception as e:
-        return render_template('error.html', message=str(e)), 500 
+    if not current_user.is_admin:
+        return "접근 권한이 없습니다.", 403
+    return render_template('admin/dashboard.html')
 
 @admin_bp.route('/admin/contract_stats')
 @login_required

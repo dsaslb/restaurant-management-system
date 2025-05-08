@@ -3,10 +3,10 @@ from extensions import db
 
 class Contract(db.Model):
     """계약 모델"""
-    __tablename__ = 'contract'
+    __tablename__ = 'contracts'
     
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date)
     position = db.Column(db.String(50))
@@ -16,7 +16,7 @@ class Contract(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # 관계 설정
-    employee = db.relationship('Employee', backref=db.backref('contracts', lazy=True))
+    employee = db.relationship('Employee', back_populates='contracts')
 
     def __repr__(self):
         return f'<Contract {self.employee_id} - {self.contract_type}>'
@@ -50,4 +50,35 @@ class ContractTemplate(db.Model):
     version = db.Column(db.String(20), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) 
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ContractRenewalLog(db.Model):
+    """계약 갱신 로그 모델"""
+    __tablename__ = 'contract_renewal_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contracts.id'), nullable=False)
+    previous_end_date = db.Column(db.Date)
+    new_end_date = db.Column(db.Date, nullable=False)
+    renewal_reason = db.Column(db.Text)
+    renewed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 관계 설정
+    contract = db.relationship('Contract', backref=db.backref('renewal_logs', lazy=True))
+    user = db.relationship('User', backref=db.backref('contract_renewals', lazy=True))
+
+class SignatureLog(db.Model):
+    """서명 로그 모델"""
+    __tablename__ = 'signature_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    contract_id = db.Column(db.Integer, db.ForeignKey('contracts.id'), nullable=False)
+    signed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    signature_date = db.Column(db.DateTime, default=datetime.utcnow)
+    signature_type = db.Column(db.String(20))  # digital, physical
+    signature_data = db.Column(db.Text)  # 디지털 서명 데이터 또는 물리적 서명 스캔 파일 경로
+    
+    # 관계 설정
+    contract = db.relationship('Contract', backref=db.backref('signatures', lazy=True))
+    user = db.relationship('User', backref=db.backref('signatures', lazy=True)) 

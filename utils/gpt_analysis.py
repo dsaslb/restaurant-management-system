@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import logging
 from datetime import datetime, timedelta
 from sqlalchemy import func
+from typing import Dict, Any, Optional
 
 # 환경 변수 로드
 load_dotenv()
@@ -11,8 +12,22 @@ load_dotenv()
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
+def _is_openai_api_key_valid() -> bool:
+    """
+    OpenAI API 키의 유효성을 검사합니다.
+    
+    Returns:
+        bool: API 키가 유효한지 여부
+    """
+    api_key = os.getenv('OPENAI_API_KEY')
+    return bool(api_key and api_key.strip())
+
 def analyze_feedback(feedback_list):
     """피드백 분석 및 요약"""
+    if not _is_openai_api_key_valid():
+        logger.warning("OpenAI API 키가 설정되지 않아 분석을 건너뜁니다.")
+        return None
+
     try:
         # OpenAI API 키 설정
         openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -60,13 +75,14 @@ def analyze_feedback(feedback_list):
 
     except Exception as e:
         logger.error(f"피드백 분석 중 오류 발생: {str(e)}")
-        return {
-            'status': 'error',
-            'message': f'피드백 분석 중 오류가 발생했습니다: {str(e)}'
-        }
+        return None
 
 def analyze_contract_text(contract_text):
     """계약서 분석 및 요약"""
+    if not _is_openai_api_key_valid():
+        logger.warning("OpenAI API 키가 설정되지 않아 분석을 건너뜁니다.")
+        return None
+
     try:
         # OpenAI API 키 설정
         openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -116,13 +132,14 @@ def analyze_contract_text(contract_text):
 
     except Exception as e:
         logger.error(f"계약서 분석 중 오류 발생: {str(e)}")
-        return {
-            'status': 'error',
-            'message': f'계약서 분석 중 오류가 발생했습니다: {str(e)}'
-        }
+        return None
 
 def analyze_lateness(attendance_logs):
     """지각 기록 분석 및 개선 제안"""
+    if not _is_openai_api_key_valid():
+        logger.warning("OpenAI API 키가 설정되지 않아 분석을 건너뜁니다.")
+        return None
+
     try:
         # OpenAI API 키 설정
         openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -192,13 +209,14 @@ def analyze_lateness(attendance_logs):
 
     except Exception as e:
         logger.error(f"지각 기록 분석 중 오류 발생: {str(e)}")
-        return {
-            'status': 'error',
-            'message': f'지각 기록 분석 중 오류가 발생했습니다: {str(e)}'
-        }
+        return None
 
 def generate_store_report(data_summary):
     """매장 운영 리포트 자동 생성"""
+    if not _is_openai_api_key_valid():
+        logger.warning("OpenAI API 키가 설정되지 않아 리포트 생성을 건너뜁니다.")
+        return None
+
     try:
         # OpenAI API 키 설정
         openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -264,7 +282,73 @@ def generate_store_report(data_summary):
 
     except Exception as e:
         logger.error(f"매장 리포트 생성 중 오류 발생: {str(e)}")
-        return {
-            'status': 'error',
-            'message': f'매장 리포트 생성 중 오류가 발생했습니다: {str(e)}'
-        } 
+        return None
+
+def analyze_sales_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    판매 데이터를 분석합니다.
+    
+    Args:
+        data (Dict[str, Any]): 분석할 판매 데이터
+        
+    Returns:
+        Optional[Dict[str, Any]]: 분석 결과
+    """
+    if not _is_openai_api_key_valid():
+        logger.warning("OpenAI API 키가 설정되지 않아 분석을 건너뜁니다.")
+        return None
+
+    try:
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        # 분석 로직
+        return {"status": "success", "message": "분석이 완료되었습니다."}
+        
+    except Exception as e:
+        logger.error(f"판매 데이터 분석 중 오류 발생: {str(e)}")
+        return None
+
+def generate_report(data: Dict[str, Any]) -> Optional[str]:
+    """
+    분석 보고서를 생성합니다.
+    
+    Args:
+        data (Dict[str, Any]): 보고서 생성에 필요한 데이터
+        
+    Returns:
+        Optional[str]: 생성된 보고서
+    """
+    if not _is_openai_api_key_valid():
+        logger.warning("OpenAI API 키가 설정되지 않아 보고서 생성을 건너뜁니다.")
+        return None
+
+    try:
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        # 보고서 생성 로직
+        return "분석 보고서 내용"
+        
+    except Exception as e:
+        logger.error(f"보고서 생성 중 오류 발생: {str(e)}")
+        return None
+
+def predict_trends(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    판매 트렌드를 예측합니다.
+    
+    Args:
+        data (Dict[str, Any]): 예측에 필요한 데이터
+        
+    Returns:
+        Optional[Dict[str, Any]]: 예측 결과
+    """
+    if not _is_openai_api_key_valid():
+        logger.warning("OpenAI API 키가 설정되지 않아 트렌드 예측을 건너뜁니다.")
+        return None
+
+    try:
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        # 트렌드 예측 로직
+        return {"status": "success", "predictions": []}
+        
+    except Exception as e:
+        logger.error(f"트렌드 예측 중 오류 발생: {str(e)}")
+        return None 

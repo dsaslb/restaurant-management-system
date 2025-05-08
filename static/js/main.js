@@ -1,5 +1,70 @@
-// DOM이 로드된 후 실행
-document.addEventListener('DOMContentLoaded', function() {
+// 전역 설정
+const API_BASE_URL = '/api';
+
+// 공통 유틸리티 함수
+const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+// API 요청 헬퍼 함수
+const apiRequest = async (endpoint, options = {}) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.detail || data.error || '요청 처리 중 오류가 발생했습니다.');
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('API 요청 오류:', error);
+        throw error;
+    }
+};
+
+// 알림 표시 함수
+const showNotification = (message, type = 'info') => {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+};
+
+// 페이지 로드 시 실행
+document.addEventListener('DOMContentLoaded', () => {
+    // CSRF 토큰 설정
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (csrfToken) {
+        window.csrfToken = csrfToken;
+    }
+    
+    // 알림 메시지 표시
+    const flashMessage = document.querySelector('.flash-message');
+    if (flashMessage) {
+        showNotification(flashMessage.textContent, flashMessage.dataset.type);
+    }
+
     // 플래시 메시지 자동 숨김
     const flashMessages = document.querySelectorAll('.alert');
     flashMessages.forEach(function(message) {
@@ -64,47 +129,7 @@ function validateForm(formId) {
     return isValid;
 }
 
-// 날짜 포맷팅
-function formatDate(date) {
-    const d = new Date(date);
-    return d.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
 // 숫자 포맷팅
 function formatNumber(number) {
     return new Intl.NumberFormat('ko-KR').format(number);
-}
-
-// API 요청 함수
-async function fetchAPI(url, method = 'GET', data = null) {
-    try {
-        const options = {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-
-        if (data) {
-            options.body = JSON.stringify(data);
-        }
-
-        const response = await fetch(url, options);
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.message || 'API 요청 실패');
-        }
-
-        return result;
-    } catch (error) {
-        console.error('API 요청 오류:', error);
-        throw error;
-    }
 } 
