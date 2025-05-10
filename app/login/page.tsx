@@ -44,12 +44,8 @@ export default function LoginPage() {
       const data = await response.json()
       toast.success("로그인되었습니다")
       
-      // 역할에 따라 다른 페이지로 리다이렉트
-      if (data.role === "admin") {
-        router.push("/admin")
-      } else {
-        router.push("/")
-      }
+      // 로그인 성공 시 항상 대시보드로 이동
+      router.push("/dashboard")
     } catch (error) {
       console.error("로그인 실패:", error)
       toast.error(error instanceof Error ? error.message : "로그인에 실패했습니다")

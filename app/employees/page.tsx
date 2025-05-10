@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
@@ -52,7 +52,12 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [searchQuery, setSearchQuery] = useState("")
 
-  // TODO: API에서 직원 목록 가져오기
+  // 페이지가 처음 렌더링될 때 직원 목록을 불러옵니다.
+  useEffect(() => {
+    fetchEmployees()
+  }, [])
+
+  // 직원 목록을 서버에서 불러오는 함수
   const fetchEmployees = async () => {
     try {
       const response = await fetch("/api/employees")
@@ -62,6 +67,13 @@ export default function EmployeesPage() {
       console.error("직원 목록을 가져오는데 실패했습니다:", error)
     }
   }
+
+  // 검색어에 따라 직원 목록을 필터링합니다.
+  const filteredEmployees = employees.filter((employee) =>
+    employee.name.includes(searchQuery) ||
+    employee.position.includes(searchQuery) ||
+    employee.email.includes(searchQuery)
+  )
 
   return (
     <div className="space-y-6">
@@ -103,7 +115,7 @@ export default function EmployeesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((employee) => (
+              {filteredEmployees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell>{employee.name}</TableCell>
                   <TableCell>{employee.position}</TableCell>
