@@ -31,8 +31,48 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-export default function DashboardPage() {
+export default function Dashboard() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [mounted, setMounted] = useState(false);
+
+  // 컴포넌트가 마운트되었는지 확인
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 현재 시간 업데이트
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 현재 시간 포맷
+  const formattedTime = currentTime.toLocaleTimeString("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // 현재 날짜 포맷
+  const formattedDate = currentTime.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
+
+  // 인사말 생성
+  const getGreeting = () => {
+    const hour = currentTime.getHours();
+    if (hour < 12) return "좋은 아침이에요";
+    if (hour < 18) return "좋은 오후에요";
+    return "좋은 저녁이에요";
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-10 px-4 space-y-8">
       <h1 className="text-3xl font-bold mb-6">대시보드</h1>
@@ -91,7 +131,7 @@ export default function DashboardPage() {
         </ul>
       </section>
     </div>
-  )
+  );
 }
 
 // ... (아래에 전체 대시보드 코드 붙여넣기)

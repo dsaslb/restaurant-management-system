@@ -16,6 +16,13 @@ import { Badge } from "@/components/ui/badge"
 import { Menu } from "@/models/menu"
 import { Plus, Search } from "lucide-react"
 import Image from "next/image"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal } from "lucide-react"
 
 export default function MenuPage() {
   const [menu, setMenu] = useState<Menu[]>([])
@@ -126,9 +133,17 @@ export default function MenuPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
-                        수정
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>수정</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600">삭제</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}

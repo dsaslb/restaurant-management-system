@@ -1,10 +1,19 @@
 {
   "admin": {
-    "password": "$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX",
+    "password": "$2b$12$2fQ5pVxKUBE1N.ZT94Mod.13OYUqexa9fi90NOAhx046c9qdfPCR.",
     "role": "admin",
     "info": {
-      "name": "관리자",
+      "name": "시스템 관리자",
       "address": "서울시"
+    },
+    "status": "active"
+  },
+  "admin02": {
+    "password": "$2b$12$2fQ5pVxKUBE1N.ZT94Mod.13OYUqexa9fi90NOAhx046c9qdfPCR.",
+    "role": null,
+    "info": {
+      "name": "",
+      "address": ""
     }
   }
-} 
+}

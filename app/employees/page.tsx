@@ -1,139 +1,144 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import supabase from "@/lib/supabase"
+import { toast } from "sonner"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import {
-  ArrowUpDown,
-  ChevronLeft,
-  Download,
-  Edit,
-  Filter,
-  MoreHorizontal,
-  Plus,
-  Search,
-  Trash2,
-  Upload,
-  Users,
-} from "lucide-react"
-
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
-import { Employee } from "@/models/employee"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
+  const router = useRouter()
+  const [employees, setEmployees] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [department, setDepartment] = useState("all")
+  const [position, setPosition] = useState("all")
 
-  // 페이지가 처음 렌더링될 때 직원 목록을 불러옵니다.
   useEffect(() => {
     fetchEmployees()
   }, [])
 
-  // 직원 목록을 서버에서 불러오는 함수
   const fetchEmployees = async () => {
     try {
-      const response = await fetch("/api/employees")
-      const data = await response.json()
-      setEmployees(data)
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .order('name')
+
+      if (error) throw error
+      setEmployees(data || [])
     } catch (error) {
-      console.error("직원 목록을 가져오는데 실패했습니다:", error)
+      toast.error('직원 목록을 불러오는데 실패했습니다.')
+    } finally {
+      setLoading(false)
     }
   }
 
-  // 검색어에 따라 직원 목록을 필터링합니다.
-  const filteredEmployees = employees.filter((employee) =>
-    employee.name.includes(searchQuery) ||
-    employee.position.includes(searchQuery) ||
-    employee.email.includes(searchQuery)
-  )
+  const filteredEmployees = employees.filter(emp => {
+    const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase()) ||
+                         emp.email.toLowerCase().includes(search.toLowerCase())
+    const matchesDepartment = department === 'all' || emp.department === department
+    const matchesPosition = position === 'all' || emp.position === position
+    return matchesSearch && matchesDepartment && matchesPosition
+  })
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">직원 관리</h1>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          직원 추가
-        </Button>
-      </div>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* 상단 네비게이션 */}
+      <header className="flex items-center justify-between px-8 py-4 border-b">
+        <div className="flex items-center gap-2 text-xl font-bold">
+          <span role="img" aria-label="restaurant">🍽️</span> Restaurant ERP
+        </div>
+        <nav className="flex items-center gap-4">
+          <Link href="/dashboard" passHref legacyBehavior><a><Button variant="ghost">대시보드</Button></a></Link>
+          <Link href="/employees" passHref legacyBehavior><a><Button variant="ghost">직원</Button></a></Link>
+          <Link href="/orders" passHref legacyBehavior><a><Button variant="ghost">주문</Button></a></Link>
+          <Link href="/inventory" passHref legacyBehavior><a><Button variant="ghost">재고</Button></a></Link>
+          <ThemeToggle />
+        </nav>
+      </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>직원 목록</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="직원 검색..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+      <main className="max-w-7xl mx-auto py-10 px-4">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">직원 관리</h1>
+          <Link href="/employees/new" passHref legacyBehavior>
+            <a><Button>+ 직원 추가</Button></a>
+          </Link>
+        </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>이름</TableHead>
-                <TableHead>직위</TableHead>
-                <TableHead>이메일</TableHead>
-                <TableHead>연락처</TableHead>
-                <TableHead>고용 형태</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>액션</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmployees.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell>{employee.name}</TableCell>
-                  <TableCell>{employee.position}</TableCell>
-                  <TableCell>{employee.email}</TableCell>
-                  <TableCell>{employee.phone}</TableCell>
-                  <TableCell>{employee.employmentType}</TableCell>
-                  <TableCell>{employee.status}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      수정
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        {/* 검색 및 필터 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Input
+            placeholder="이름 또는 이메일로 검색"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Select value={department} onValueChange={setDepartment}>
+            <SelectTrigger>
+              <SelectValue placeholder="부서 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 부서</SelectItem>
+              <SelectItem value="kitchen">주방</SelectItem>
+              <SelectItem value="service">서비스</SelectItem>
+              <SelectItem value="management">경영</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={position} onValueChange={setPosition}>
+            <SelectTrigger>
+              <SelectValue placeholder="직급 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 직급</SelectItem>
+              <SelectItem value="manager">매니저</SelectItem>
+              <SelectItem value="chef">주방장</SelectItem>
+              <SelectItem value="staff">직원</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* 직원 목록 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loading ? (
+            <div>로딩 중...</div>
+          ) : filteredEmployees.length === 0 ? (
+            <div>검색 결과가 없습니다.</div>
+          ) : (
+            filteredEmployees.map((employee) => (
+              <Link href={`/employees/${employee.id}`} key={employee.id} passHref legacyBehavior>
+                <a>
+                  <Card className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="flex flex-row items-center gap-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={employee.profile_image} alt={employee.name} />
+                        <AvatarFallback>{employee.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-lg">{employee.name}</CardTitle>
+                        <div className="text-sm text-muted-foreground">{employee.email}</div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary">{employee.department}</Badge>
+                        <Badge variant="outline">{employee.position}</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </a>
+              </Link>
+            ))
+          )}
+        </div>
+      </main>
     </div>
   )
 } 

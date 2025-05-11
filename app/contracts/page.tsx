@@ -25,18 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { useForm } from "react-hook-form"
-import { format } from "date-fns"
-import { ko } from "date-fns/locale"
 import { FileText, Download, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { BulkImport } from "./bulk-import"
@@ -71,16 +60,16 @@ export default function ContractsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const form = useForm<ContractFormData>({
-    defaultValues: {
-      username: "",
-      position: "",
-      wage: "",
-      startDate: format(new Date(), "yyyy-MM-dd"),
-      endDate: format(new Date(new Date().setFullYear(new Date().getFullYear() + 1)), "yyyy-MM-dd"),
-      signature: "",
-    },
-  })
+  // const form = useForm<ContractFormData>({
+  //   defaultValues: {
+  //     username: "",
+  //     position: "",
+  //     wage: "",
+  //     startDate: format(new Date(), "yyyy-MM-dd"),
+  //     endDate: format(new Date(new Date().setFullYear(new Date().getFullYear() + 1)), "yyyy-MM-dd"),
+  //     signature: "",
+  //   },
+  // })
 
   useEffect(() => {
     fetchContracts()
@@ -133,34 +122,34 @@ export default function ContractsPage() {
     }
   }
 
-  const onSubmit = async (data: ContractFormData) => {
-    try {
-      setIsLoading(true)
-      const response = await fetch("/api/contracts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          wage: parseInt(data.wage.replace(/,/g, "")),
-        }),
-      })
+  // const onSubmit = async (data: ContractFormData) => {
+  //   try {
+  //     setIsLoading(true)
+  //     const response = await fetch("/api/contracts", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         ...data,
+  //         wage: parseInt(data.wage.replace(/,/g, "")),
+  //       }),
+  //     })
 
-      if (!response.ok) throw new Error("계약서 생성에 실패했습니다")
+  //     if (!response.ok) throw new Error("계약서 생성에 실패했습니다")
 
-      toast.success("계약서가 생성되었습니다")
-      setIsDialogOpen(false)
-      form.reset()
-      fetchContracts()
-      fetchStats()
-    } catch (error) {
-      console.error("계약서 생성에 실패했습니다:", error)
-      toast.error("계약서 생성에 실패했습니다")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  //     toast.success("계약서가 생성되었습니다")
+  //     setIsDialogOpen(false)
+  //     form.reset()
+  //     fetchContracts()
+  //     fetchStats()
+  //   } catch (error) {
+  //     console.error("계약서 생성에 실패했습니다:", error)
+  //     toast.error("계약서 생성에 실패했습니다")
+  //   } finally {
+  //     setIsLoading(false)
+  //   }
+  // }
 
   return (
     <div className="container mx-auto py-6">
@@ -182,7 +171,7 @@ export default function ContractsPage() {
                   새로운 근로계약서를 작성합니다.
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
+              {/* <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
@@ -275,7 +264,7 @@ export default function ContractsPage() {
                     {isLoading ? "생성 중..." : "계약서 생성"}
                   </Button>
                 </form>
-              </Form>
+              </Form> */}
             </DialogContent>
           </Dialog>
         </div>

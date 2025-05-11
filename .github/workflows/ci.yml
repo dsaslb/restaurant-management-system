@@ -9,9 +9,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      
     strategy:
       matrix:
-        python-version: [3.13.2]
+        python-version: [3.12.10]
+      
 
     steps:
     - uses: actions/checkout@v4
@@ -44,8 +48,9 @@ jobs:
       run: |
         pytest --cov=app tests/
         
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true 
+        

@@ -6,6 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Plus, Search } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal } from "lucide-react"
 
 const dummyOrders = [
   { id: "1", tableNumber: 3, status: "served", totalAmount: 45000, createdAt: "2024-05-10" },
@@ -50,6 +58,7 @@ export default function OrdersPage() {
                 <TableHead>상태</TableHead>
                 <TableHead>총액</TableHead>
                 <TableHead>주문일</TableHead>
+                <TableHead>액션</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -57,9 +66,26 @@ export default function OrdersPage() {
                 <TableRow key={order.id}>
                   <TableCell>{order.id}</TableCell>
                   <TableCell>{order.tableNumber}</TableCell>
-                  <TableCell>{order.status}</TableCell>
+                  <TableCell>
+                    <Badge variant={order.status === "served" ? "default" : "outline"}>
+                      {order.status === "served" ? "서빙 완료" : order.status === "pending" ? "대기 중" : order.status}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{order.totalAmount.toLocaleString()}원</TableCell>
                   <TableCell>{order.createdAt}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>수정</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">삭제</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

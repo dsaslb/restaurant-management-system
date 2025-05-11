@@ -2,59 +2,55 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { OrderNotification } from "@/components/orders/notification"
+import { ThemeToggle } from "@/components/theme-toggle"
 
-const routes = [
-  {
-    href: "/employees",
-    label: "직원 관리",
-  },
-  {
-    href: "/attendance",
-    label: "근태 관리",
-  },
-  {
-    href: "/menu",
-    label: "메뉴 관리",
-  },
-  {
-    href: "/orders",
-    label: "주문 관리",
-  },
-  {
-    href: "/contracts",
-    label: "계약 관리",
-  },
+// 메뉴 항목 배열 - 반드시 대괄호로 열고 닫고, 각 항목은 중괄호로 감쌉니다.
+const menuItems = [
+  { name: "대시보드", href: "/dashboard" },
+  { name: "직원 관리", href: "/employees" },
+  { name: "계약서", href: "/contracts" },
+  { name: "급여", href: "/payroll" },
+  { name: "출퇴근", href: "/attendance" },
+  { name: "설정", href: "/settings" },
 ]
 
-export function Navbar() {
+export default function Navbar() {
   const pathname = usePathname()
 
   return (
-    <div className="border-b">
-      <div className="flex h-16 items-center px-4">
-        <nav className="flex items-center space-x-4 lg:space-x-6 mx-6">
-          {routes.map((route) => (
-            <Link
-              key={route.href}
-              href={route.href}
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
-                pathname === route.href
-                  ? "text-black dark:text-white"
-                  : "text-muted-foreground"
-              )}
-            >
-              {route.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="ml-auto flex items-center space-x-4">
-          <OrderNotification />
+    <nav className="bg-white dark:bg-gray-900 border-b shadow-sm theme-element-transition" aria-label="메인 메뉴">
+      <div className="mx-auto max-w-screen-xl px-4 py-3 flex items-center justify-between">
+        {/* 좌측: 로고/타이틀 */}
+        <h1 className="text-xl font-bold dark:text-white">매장 ERP</h1>
+        {/* 중앙: 메뉴 버튼들 */}
+        <ul className="flex gap-2">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <li key={item.href}>
+                <Link href={item.href}>
+                  <Button
+                    variant={isActive ? "default" : "ghost"}
+                    className={
+                      isActive
+                        ? "text-blue-600 dark:text-blue-400 font-bold"
+                        : "text-gray-700 dark:text-gray-300"
+                    }
+                    size="sm"
+                  >
+                    {item.name}
+                  </Button>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+        {/* 우측: 테마 토글 버튼 */}
+        <div className="ml-4">
+          <ThemeToggle />
         </div>
       </div>
-    </div>
+    </nav>
   )
 } 

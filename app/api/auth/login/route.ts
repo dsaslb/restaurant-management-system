@@ -31,7 +31,17 @@ export async function POST(request: Request) {
       )
     }
 
-    const isValid = await compare(password, users[username].password)
+    const user = users[username]
+
+    // 승인 상태 확인
+    if (user.status !== "active") {
+      return NextResponse.json(
+        { error: "승인 대기 중인 계정입니다. 관리자 승인 후 로그인이 가능합니다." },
+        { status: 401 }
+      )
+    }
+
+    const isValid = await compare(password, user.password)
     if (!isValid) {
       return NextResponse.json(
         { error: "아이디 또는 비밀번호가 올바르지 않습니다" },
@@ -39,7 +49,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const role = users[username].role || "staff"
+    const role = user.role || "staff"
     const token = sign(
       { username, role },
       JWT_SECRET,

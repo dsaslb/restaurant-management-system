@@ -1,4 +1,5 @@
-from flask import Flask, redirect, url_for, flash, request, render_template, Markup
+from flask import Flask, redirect, url_for, flash, request, render_template
+from markupsafe import Markup
 from dotenv import load_dotenv
 from extensions import db, migrate, login_manager
 import os
@@ -11,8 +12,9 @@ import atexit
 from typing import Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_migrate import Migrate
-from flask_login import LoginManager, current_user
+from flask_login import LoginManager, current_user, login_required, logout_user
 from utils.logger import setup_logger
+from supabase import create_client, Client
 
 from models import (
     User,
@@ -405,9 +407,8 @@ def create_sample_data():
 # 메인 페이지 라우트
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('auth.login'))
+    return redirect('/login')
+    
 
 # 블루프린트 등록
 app.register_blueprint(auth_bp)
@@ -438,7 +439,7 @@ with app.app_context():
         db.drop_all()  # 모든 테이블 삭제
         db.create_all()  # 테이블 다시 생성
         
-        # 관리자 계정 생성
+        # 기존 관리자 계정 생성
         admin = User(
             username='admin01',
             email='admin@example.com',
@@ -447,8 +448,20 @@ with app.app_context():
         )
         admin.set_password('1234')
         db.session.add(admin)
+        
+        # 새 총관리자 계정 생성
+        super_admin = User(
+            username='dsaslb@gmail.com',
+            email='dsaslb@gmail.com',
+            role='admin',
+            is_active=True
+        )
+        super_admin.set_password('darkone0718!')
+        db.session.add(super_admin)
+        
         db.session.commit()
         logger.info('관리자 계정이 생성되었습니다.')
+        logger.info('총관리자 계정이 생성되었습니다.')
         
         # 샘플 데이터 생성
         create_sample_data()
@@ -471,6 +484,58 @@ def status_color(status):
 
 # 필터 등록
 app.jinja_env.filters['status_color'] = status_color
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            flash('로그인 성공!')
+            from flask_login import login_user
+            login_user(user)
+            return redirect('/dashboard')
+        else:
+            return render_template('login.html', error='로그인 실패!')
+    return render_template('login.html')
+
+SUPABASE_URL = "https://ifzynlgyqdhwdcvmjogt.supabase.co" # 본인 프로젝트 URL로 변경
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmenlubGd5cWRod2Rjdm1qb2d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4NjEwMTIsImV4cCI6MjA2MjQzNzAxMn0.7yJNoNlrVscUi97qmeY83GUohyBH6V440p_HWRimYpE"             # 본인 서비스 역할 키로 변경
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def create_supabase_admin():
+    email = "dsaslb@gmail.com"
+    password = "darkone0718!"
+    # 이미 존재하는지 확인
+    user = supabase.auth.admin.get_user_by_email(email)
+    if user.get('user'):
+        print("Supabase에 이미 계정이 있습니다.")
+        return
+    # 계정 생성
+    result = supabase.auth.admin.create_user({
+        "email": email,
+        "password": password,
+        "email_confirm": True,
+        "user_metadata": {"role": "admin"}
+    })
+    print("Supabase에 총관리자 계정이 생성되었습니다:", result)
+
+# 관리자 계정 생성 후 호출
+create_supabase_admin()
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # 대시보드 내용
+    return render_template('dashboard.html')
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    flash('로그아웃 되었습니다.')
+    return redirect('/login')
 
 if __name__ == '__main__':
     logger.info('레스토랑 시스템 시작')

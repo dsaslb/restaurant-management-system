@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,6 +9,16 @@ import { Input } from "@/components/ui/input"
 import { Search, Filter, Clock, ArrowUpRight, ArrowDownRight, Calendar, BarChart } from "lucide-react"
 import { format } from "date-fns"
 import { ko } from "date-fns/locale"
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface AttendanceCardProps {
   title: string
@@ -27,8 +37,72 @@ interface AttendanceRowProps {
   status: "complete" | "active" | "late" | "absent"
 }
 
+interface Attendance {
+  id: string
+  employee: string
+  checkIn: string
+  checkOut: string
+  late: boolean
+}
+
+interface Employee {
+  id: string
+  name: string
+  position?: string
+  avatar?: string
+}
+
 export default function AttendancePage() {
   const [date] = useState(new Date())
+  const [records, setRecords] = useState<Attendance[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [search, setSearch] = useState("")
+  const [filterLate, setFilterLate] = useState<null | boolean>(null)
+  const [selectedRecord, setSelectedRecord] = useState<Attendance | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchAttendance()
+    fetchEmployees()
+  }, [])
+
+  const fetchAttendance = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/attendance")
+      const data = await response.json()
+      setRecords(data)
+    } catch (error) {
+      console.error("출퇴근 기록을 가져오는데 실패했습니다:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch("/api/employees")
+      const data = await response.json()
+      setEmployees(data)
+    } catch (error) {
+      console.error("직원 데이터를 가져오는데 실패했습니다:", error)
+    }
+  }
+
+  // 검색 및 필터링된 데이터
+  const filteredRecords = records.filter((rec) => {
+    const matchesSearch =
+      rec.employee.includes(search) ||
+      rec.id.includes(search)
+    const matchesLate =
+      filterLate === null ? true : rec.late === filterLate
+    return matchesSearch && matchesLate
+  })
+
+  // 직원명 → 직원 객체 매칭 함수
+  const getEmployeeInfo = (employeeName: string) =>
+    employees.find(emp => emp.name === employeeName)
 
   return (
     <div className="container mx-auto p-4 md:p-6">
@@ -80,14 +154,38 @@ export default function AttendancePage() {
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      {/* 검색/필터 UI */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="직원 이름으로 검색..." className="pl-8" />
+          <Input
+            type="search"
+            placeholder="직원 이름, 기록ID로 검색..."
+            className="pl-8"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
-        <Button variant="outline" size="icon">
-          <Filter className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={filterLate === null ? "default" : "outline"}
+            onClick={() => setFilterLate(null)}
+          >
+            전체
+          </Button>
+          <Button
+            variant={filterLate === false ? "default" : "outline"}
+            onClick={() => setFilterLate(false)}
+          >
+            정상
+          </Button>
+          <Button
+            variant={filterLate === true ? "default" : "outline"}
+            onClick={() => setFilterLate(true)}
+          >
+            지각
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="today" className="mb-6">
@@ -107,59 +205,49 @@ export default function AttendancePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <div className="grid grid-cols-7 bg-slate-50 p-4 text-sm font-medium">
-              <div>직원</div>
-              <div>직책</div>
-              <div>출근 시간</div>
-              <div>퇴근 시간</div>
-              <div>근무 시간</div>
-              <div>상태</div>
-              <div></div>
-            </div>
-            <div className="divide-y">
-              <AttendanceRow
-                name="김직원"
-                position="매니저"
-                checkIn="08:55"
-                checkOut="18:05"
-                hours="9시간 10분"
-                status="complete"
-              />
-              <AttendanceRow
-                name="이직원"
-                position="주방장"
-                checkIn="08:45"
-                checkOut="18:30"
-                hours="9시간 45분"
-                status="complete"
-              />
-              <AttendanceRow
-                name="박직원"
-                position="서빙"
-                checkIn="09:15"
-                checkOut="-"
-                hours="-"
-                status="active"
-              />
-              <AttendanceRow
-                name="최직원"
-                position="캐셔"
-                checkIn="09:30"
-                checkOut="-"
-                hours="-"
-                status="active"
-              />
-              <AttendanceRow
-                name="정직원"
-                position="주방 보조"
-                checkIn="10:15"
-                checkOut="-"
-                hours="-"
-                status="late"
-              />
-            </div>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>기록 ID</TableHead>
+                <TableHead>직원</TableHead>
+                <TableHead>직위</TableHead>
+                <TableHead>출근</TableHead>
+                <TableHead>퇴근</TableHead>
+                <TableHead>지각</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRecords.map((rec) => {
+                const emp = getEmployeeInfo(rec.employee)
+                return (
+                  <TableRow key={rec.id}>
+                    <TableCell>{rec.id}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={emp?.avatar || "/placeholder.svg"} />
+                          <AvatarFallback>{emp?.name?.charAt(0) || rec.employee.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>{emp ? emp.name : rec.employee}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{emp?.position || '-'}</TableCell>
+                    <TableCell>{rec.checkIn}</TableCell>
+                    <TableCell>{rec.checkOut}</TableCell>
+                    <TableCell>
+                      <Badge variant={rec.late ? "destructive" : "default"}>
+                        {rec.late ? "지각" : "정상"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+          {isLoading && <p className="text-center py-4">불러오는 중...</p>}
+          {!isLoading && filteredRecords.length === 0 && (
+            <p className="text-center py-4 text-gray-500">출퇴근 데이터가 없습니다.</p>
+          )}
         </CardContent>
       </Card>
     </div>
